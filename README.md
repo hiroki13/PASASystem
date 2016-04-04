@@ -1,6 +1,6 @@
-# Predicate Argument Structure Analysis (PASA) System
+# Predicate Argument Structure Analysis System
 
-* Joint Case Identification for Japanese Predicate Argument Structure Analysis
+* "Joint Case Argument Identification for Japanese Predicate Argument Structure Analysis"
 * In Proceedings of ACL 2015
 
 ## Preprocessing
