@@ -100,9 +100,15 @@ final public class ParameterChecker {
             case_labels = new int[1];
             case_labels[0] = 1;            
         }
-        else {
+        else if (ni){
             case_labels = new int[1];
             case_labels[0] = 2;            
+        }
+        else {
+            case_labels = new int[3];
+            case_labels[0] = 0;
+            case_labels[1] = 1;
+            case_labels[2] = 2;            
         }
         
         this.mode.case_labels = case_labels;
