@@ -156,10 +156,8 @@ final public class Mode {
             System.out.println(String.format("\nIteration %d: ", i+1));
             AccuracyChecker checker = new AccuracyChecker(n_cases);
 
-//            if (i+1<iteration)
-//                checker.test(testsentence, parser, restart, false);
-//            else
-            checker.testAndOutput(testsentence, parser, restart, outfile,
+            String out_fn = outfile + "-" + i;
+            checker.testAndOutput(testsentence, parser, restart, out_fn,
                                   false, false);
             
  

@@ -252,35 +252,19 @@ public class AccuracyChecker {
         
         PrintWriter pw = new PrintWriter(new BufferedWriter
                                         (new FileWriter(fn+".ntc")));
-        PrintWriter gw = new PrintWriter(new BufferedWriter
-                                        (new FileWriter(fn+".graph")));
         
         int[] null_case =new int[case_length];
         for (int i=0; i<case_length; i++)
             null_case[i] = -1;
         
-        for (int i=0; i<sentencelist.size(); i++){
+        for (int i=0; i<sentencelist.size(); ++i) {
             Sentence sentence = sentencelist.get(i);
             ArrayList<Chunk> chunks = sentence.chunks;
-            
-            if (sentence.has_prds) {
-                for (int j=0; j<graph[i].length; ++j) {
-                    String text ="";
-                    for (int k=0; k<graph[i][j].length; ++k) {
-                        text += graph[i][j][k] + " ";
-                    }
-                    gw.println(text);
-                }
-            }
-            else {
-                gw.println(-1);
-            }
-            gw.println();
             
             pw.println("#");
 
             int prd_i = 0;
-            for (int j=0; j<sentence.size(); ++j) {
+            for (int j=0; j<sentence.size()-1; ++j) {
                 Chunk c = chunks.get(j);
                 int[] predicted_case = new int[case_length];
                 
@@ -291,8 +275,13 @@ public class AccuracyChecker {
                 else {                     
                     predicted_case = null_case;
                 }
+                
+                for (int k=0; k<predicted_case.length; ++k) {
+                    if (predicted_case[k] == sentence.size() - 1)
+                        predicted_case[k] = -1;
+                }
                                 
-                String text = String.format("* %d %d %s %s %s %s %s %s | pred:%s",
+                String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
                                             c.index, c.head,
                                             Arrays.toString(c.ga),
                                             Arrays.toString(c.o),
@@ -316,7 +305,6 @@ public class AccuracyChecker {
             
         }
         pw.close();
-        gw.close();
     }
 
     
