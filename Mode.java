@@ -126,12 +126,12 @@ final public class Mode {
                 
             if (i+1<iteration && check_accuracy) {                
                 checker = new AccuracyChecker(n_cases);
-                checker.test(testsentence, trainer.parser, restart);
+                checker.test(testsentence, trainer.parser, restart, true);
             }
             else if (i+1 == iteration) {
                 checker = new AccuracyChecker(n_cases);
                 checker.testAndOutput(testsentence, trainer.parser, restart,
-                                      outfile, true);
+                                      outfile, true, true);
             }
             trainer.parser.cache = true;
                 
@@ -139,7 +139,7 @@ final public class Mode {
                 double time = testsentence.size()/(((double) checker.time)/1000.0);    
                 System.out.println("\tTime: " + time + "sent./sec.");
                 showPerformance(checker);
-            }
+            } 
         }
     }
     
@@ -157,10 +157,10 @@ final public class Mode {
             AccuracyChecker checker = new AccuracyChecker(n_cases);
 
 //            if (i+1<iteration)
-                checker.test(testsentence, parser, restart, true);
+//                checker.test(testsentence, parser, restart, false);
 //            else
-//                checker.testAndOutput(testsentence, parser, restart, outfile,
-//                                      false);
+            checker.testAndOutput(testsentence, parser, restart, outfile,
+                                  false, false);
             
  
             double time = testsentence.size()/(((double) checker.time)/1000.0);    

@@ -117,58 +117,24 @@ public class AccuracyChecker {
     }
     
     
-    final public void test(List<Sentence> sentencelist, Parser parser,
-                            int restart){
+    final public void test(List<Sentence> sentencelist,
+                            Parser parser,
+                            int restart,
+                            boolean avg_weight){
         this.parser = new Parser(case_length);
         this.parser.perceptron.feature = parser.perceptron.feature;
         this.parser.perceptron.feature.sentencelist = sentencelist;
-        this.parser.perceptron.weight = averagingWeights(parser);
-        this.parser.perceptron.feature.w =
-                                        parser.perceptron.weight.length;
+        this.parser.perceptron.feature.w = parser.perceptron.weight.length;
         this.parser.cache = false;
         this.parser.rnd = parser.rnd;        
-        time = (long) 0.0;
 
-        Sentence sentence;
-        int[][] graph;
-        int args_length;
-        int prds_length;
-        
-        for (int i=0; i<sentencelist.size(); i++){
-            sentence = sentencelist.get(i);
-            args_length = sentence.arg_indices.size();
-            prds_length = sentence.prd_indices.size();
-            this.parser.perceptron.feature.cache =
-                new ArrayList[case_length][case_length][prds_length]
-                             [args_length][prds_length][args_length];
-
-            if (!sentence.has_prds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            graph = this.parser.decode(sentence, restart, true);
-            time += System.currentTimeMillis() - time1;
-            
-            this.checkUAS(sentence, graph);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
+        if (avg_weight) {
+            this.parser.perceptron.weight = averagingWeights(parser);            
         }
-    }    
-
-    final public void test(List<Sentence> sentencelist, Parser parser,
-                            int restart, boolean t){
-        this.parser = new Parser(case_length);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sentencelist = sentencelist;
-        this.parser.perceptron.weight = parser.perceptron.weight;
-        this.parser.perceptron.feature.w =
-                                        parser.perceptron.weight.length;
-        this.parser.cache = false;
-        this.parser.rnd = parser.rnd;        
+        else {
+            this.parser.perceptron.weight = parser.perceptron.weight;
+        }
+        
         time = (long) 0.0;
 
         Sentence sentence;
@@ -202,58 +168,26 @@ public class AccuracyChecker {
     }    
     
 
-    final public void test(List<Sentence> sentencelist, Parser parser,
-                            ArrayList[] init_graphs){
-        this.parser = new Parser(case_length);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sentencelist = sentencelist;
-        this.parser.perceptron.weight = averagingWeights(parser);
-        this.parser.perceptron.feature.w =
-                                        parser.perceptron.weight.length;
-        this.parser.cache = false;
-        this.parser.rnd = parser.rnd;        
-        time = (long) 0.0;
-
-        Sentence sentence;
-        int[][] graph;
-        int args_length;
-        int prds_length;
-        
-        for (int i=0; i<sentencelist.size(); i++){
-            sentence = sentencelist.get(i);
-            args_length = sentence.arg_indices.size();
-            prds_length = sentence.prd_indices.size();
-            this.parser.perceptron.feature.cache =
-                new ArrayList[case_length][case_length][prds_length]
-                             [args_length][prds_length][args_length];
-
-            if (!sentence.has_prds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            graph = this.parser.decode(sentence, true, init_graphs[i]);
-            time += System.currentTimeMillis() - time1;
-            
-            this.checkUAS(sentence, graph);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
-        }
-    }    
-
-    
-    final public void testAndOutput(List<Sentence> sentencelist, Parser parser,
-                                      int restart, String fn, boolean flag)
+    final public void testAndOutput(List<Sentence> sentencelist,
+                                      Parser parser,
+                                      int restart,
+                                      String fn,
+                                      boolean output_model_file,
+                                      boolean avg_weight)
                                       throws IOException{
         this.parser = new Parser(case_length);
         this.parser.perceptron.feature = parser.perceptron.feature;
         this.parser.perceptron.feature.sentencelist = sentencelist;
-        this.parser.perceptron.weight = averagingWeights(parser);
         this.parser.cache = false;
         this.parser.rnd = parser.rnd;
+
+        if (avg_weight) {
+            this.parser.perceptron.weight = averagingWeights(parser);            
+        }
+        else {
+            this.parser.perceptron.weight = parser.perceptron.weight;
+        }
+        
         time = (long) 0.0;
 
         Sentence sentence;
@@ -289,58 +223,10 @@ public class AccuracyChecker {
         this.parser.perceptron.feature.cache = null;
         this.parser.perceptron.cache_feats = null;
         outputText(fn, sentencelist, graph);
-        if (flag)
+        if (output_model_file)
             outputPerceptron(fn);
     }    
 
-    
-    final public void testAndOutput(List<Sentence> sentencelist, Parser parser,
-                                      String fn, ArrayList[] init_graphs)
-                                      throws IOException{
-        this.parser = new Parser(case_length);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sentencelist = sentencelist;
-        this.parser.perceptron.weight = averagingWeights(parser);
-        this.parser.cache = false;
-        this.parser.rnd = parser.rnd;
-        time = (long) 0.0;
-
-        Sentence sentence;
-        int[][][] graph = new int[sentencelist.size()][][];
-        int args_length;
-        int prds_length;
-        
-        for (int i=0; i<sentencelist.size(); i++){
-            sentence = sentencelist.get(i);
-            args_length = sentence.arg_indices.size();
-            prds_length = sentence.prd_indices.size();
-            graph[i] = new int[prds_length][case_length];
-            this.parser.perceptron.feature.cache =
-                new ArrayList[case_length][case_length][prds_length]
-                             [args_length][prds_length][args_length];
-
-            if (!sentence.has_prds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            graph[i] = this.parser.decode(sentence, true, init_graphs[i]);
-            time += System.currentTimeMillis() - time1;
-
-            this.checkUAS(sentence, graph[i]);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
-        }
-        
-        this.parser.perceptron.feature.cache = null;
-        this.parser.perceptron.cache_feats = null;
-        outputText(fn, sentencelist, graph);
-        outputPerceptron(fn);
-    }    
-    
     
     final public void outputPerceptron(String fn){
         try {      
