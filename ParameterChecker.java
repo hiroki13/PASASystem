@@ -17,11 +17,30 @@ final public class ParameterChecker {
         this.mode = mode;
         this.optionparser = mode.optionparser;
     }
+
+    private void checkParamArgs(){
+        mode.train = optionparser.isExsist("train");
+        mode.test = optionparser.isExsist("test");
+        mode.output = optionparser.isExsist("output");
+        mode.model = optionparser.isExsist("model");
+        mode.check_accuracy = true;
+
+        mode.ga = optionparser.isExsist("ga");
+        mode.o = optionparser.isExsist("o");
+        mode.ni = optionparser.isExsist("ni");
+        
+        mode.iteration = optionparser.getInt("iter",10);
+        mode.restart = optionparser.getInt("restart", 10);
+        mode.rnd = optionparser.getInt("rnd", 0);
+        mode.weight_length = optionparser.getInt("weight", 500000);
+    }
     
-    final public void check() {
+    final public void setParams() {
         String modeselect = mode.modeselect;
         
-        if ("train".equals(modeselect)) {
+        checkParamArgs();
+        
+        if ("train".equals(modeselect) || "train_word".equals(modeselect)) {
             setTrainFile();
             setTestFile();
             setOutputFile();
@@ -68,7 +87,7 @@ final public class ParameterChecker {
         }        
     }
 
-    final private void setParsedCases(boolean ga, boolean o, boolean ni) {
+    private void setParsedCases(boolean ga, boolean o, boolean ni) {
         int[] case_labels;
 
         if (ga && o && ni) {
@@ -111,8 +130,8 @@ final public class ParameterChecker {
             case_labels[2] = 2;            
         }
         
-        this.mode.case_labels = case_labels;
-        this.mode.n_cases = case_labels.length;
+        mode.case_labels = case_labels;
+        mode.n_cases = case_labels.length;
     }
         
 }

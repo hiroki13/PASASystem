@@ -47,9 +47,9 @@ public class AccuracyChecker {
 
     final public void checkUAS(Sentence sentence, int[][] graph){
         ArrayList<Chunk> chunks = sentence.chunks;
-        ArrayList<Integer> arg_ids = sentence.arg_indices;
-        int[][] o_graph = sentence.o_graph;
-        ArrayList<Integer> prds = sentence.prd_indices;
+        ArrayList<Integer> arg_ids = sentence.argIndices;
+        int[][] o_graph = sentence.oracleGraph;
+        ArrayList<Integer> prds = sentence.prdIndices;
         int[] o_case_graph = new int[graph.length];
         int[] case_graph = new int[graph.length];
         
@@ -60,15 +60,14 @@ public class AccuracyChecker {
                 case_graph[prd_i] = graph[prd_i][case_label];
             }
             
-            r_dep[case_label] += sentence.n_dep_case_args[case_label];
-            r_zero[case_label] += sentence.n_zero_case_args[case_label];
+            r_dep[case_label] += sentence.nDepCaseArgs[case_label];
+            r_zero[case_label] += sentence.nZeroCaseArgs[case_label];
 
-            computePerformance(chunks, arg_ids, o_case_graph, case_graph, prds,
-                               case_label);
+            computePerformance(chunks, arg_ids, o_case_graph, case_graph, prds, case_label);
         }
     }
     
-    final private void computePerformance(ArrayList<Chunk> chunks,
+    private void computePerformance(ArrayList<Chunk> chunks,
                                             ArrayList<Integer> arg_ids,
                                             int[] o_graph,
                                             int[] graph,
@@ -97,7 +96,7 @@ public class AccuracyChecker {
             if (arg_id != arg_ids.size()-1) {
                 p_total[case_label] += 1.0f;
 
-                if (arg.head != prd.index && prd.head != arg.index) {
+                if (arg.DEP_HEAD_INDEX != prd.INDEX && prd.DEP_HEAD_INDEX != arg.INDEX) {
                     p_zero[case_label] += 1.0f;
                 }
 
@@ -116,7 +115,6 @@ public class AccuracyChecker {
         }
     }
     
-    
     final public void test(List<Sentence> sentencelist,
                             Parser parser,
                             int restart,
@@ -128,29 +126,26 @@ public class AccuracyChecker {
         this.parser.cache = false;
         this.parser.rnd = parser.rnd;        
 
-        if (avg_weight) {
+        if (avg_weight)
             this.parser.perceptron.weight = averagingWeights(parser);            
-        }
-        else {
+        else
             this.parser.perceptron.weight = parser.perceptron.weight;
-        }
         
         time = (long) 0.0;
 
         Sentence sentence;
         int[][] graph;
-        int args_length;
-        int prds_length;
+        int args_length, prds_length;
         
         for (int i=0; i<sentencelist.size(); i++){
             sentence = sentencelist.get(i);
-            args_length = sentence.arg_indices.size();
-            prds_length = sentence.prd_indices.size();
+            args_length = sentence.argIndices.size();
+            prds_length = sentence.prdIndices.size();
             this.parser.perceptron.feature.cache =
                 new ArrayList[case_length][case_length][prds_length]
                              [args_length][prds_length][args_length];
 
-            if (!sentence.has_prds) {
+            if (!sentence.hasPrds) {
                 if (i%1000 == 0 && i != 0)
                     System.out.print(String.format("%d ", i));
                 continue;
@@ -197,14 +192,14 @@ public class AccuracyChecker {
         
         for (int i=0; i<sentencelist.size(); i++){
             sentence = sentencelist.get(i);
-            args_length = sentence.arg_indices.size();
-            prds_length = sentence.prd_indices.size();
+            args_length = sentence.argIndices.size();
+            prds_length = sentence.prdIndices.size();
             graph[i] = new int[prds_length][case_length];
             this.parser.perceptron.feature.cache =
                 new ArrayList[case_length][case_length][prds_length]
                              [args_length][prds_length][args_length];
 
-            if (!sentence.has_prds) {
+            if (!sentence.hasPrds) {
                 if (i%1000 == 0 && i != 0)
                     System.out.print(String.format("%d ", i));
                 continue;
@@ -282,7 +277,7 @@ public class AccuracyChecker {
                 }
                                 
                 String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
-                                            c.index, c.head,
+                                            c.INDEX, c.DEP_HEAD_INDEX,
                                             Arrays.toString(c.ga),
                                             Arrays.toString(c.o),
                                             Arrays.toString(c.ni),
@@ -292,11 +287,11 @@ public class AccuracyChecker {
                                             Arrays.toString(predicted_case));
                 pw.println(text);           
                 
-                for (int k=0; k<c.tokens.size(); ++k) {
-                    Token t = (Token) c.tokens.get(k);
+                for (int k=0; k<c.words.size(); ++k) {
+                    Word t = (Word) c.words.get(k);
                     text = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
-                                        t.form, t.yomi, t.r_form, t.cpos,
-                                        t.pos, t.inf_type, t.inf_form, t.pas);
+                                        t.FORM, t.YOMI, t.R_FORM, t.CPOS,
+                                        t.POS, t.INF_TYPE, t.INF_FORM, t.PAS);
                     pw.println(text);                    
                 }
             }

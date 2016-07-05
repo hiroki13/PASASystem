@@ -46,8 +46,8 @@ public class Feature implements Serializable{
         final ArrayList<Integer> usedFeatures = new ArrayList<>();
 
         final ArrayList<Chunk> chunks = sentence.chunks;
-        final ArrayList<Integer> args = sentence.arg_indices;
-        final ArrayList<Integer> prds = sentence.prd_indices;
+        final ArrayList<Integer> args = sentence.argIndices;
+        final ArrayList<Integer> prds = sentence.prdIndices;
         final int prd_length = prds.size();
         
         final int[][] t_graph = genTGraph(prd_length, graph); // tenchi
@@ -144,7 +144,7 @@ public class Feature implements Serializable{
                     prd1 = chunks.get(prd_id1);                    
                     aux1 = arg1.aux;
                     prd1_rform = prd1.reg_form;
-                    arg_path1 = sentence.dep_path[a1][prd_id1];
+                    arg_path1 = sentence.depPath[a1][prd_id1];
                     comp_joshi1 = prd1.compound_joshi;
                     alt1 = prd1.case_alter;
                 }                
@@ -199,8 +199,8 @@ public class Feature implements Serializable{
 
                     final String a_posit = position_coarg(arg_id1, prd_id1,
                                                           prd_id2, arg_length);                                        
-                    final String prd_path = sentence.dep_path[prd_id1][prd_id2];
-                    final String arg_path2 = sentence.dep_path[a1][prd_id2];
+                    final String prd_path = sentence.depPath[prd_id1][prd_id2];
+                    final String arg_path2 = sentence.depPath[a1][prd_id2];
                                                             
                     final String prd_joshi = comp_joshi1 + alt1
                                              + comp_joshi2 + alt2
@@ -261,11 +261,11 @@ public class Feature implements Serializable{
                                                      final int prd_i) {
         final String[] feature = new String[1];
         final ArrayList<Integer> usedFeatures = new ArrayList<>();
-        final int arg_length = sentence.arg_indices.size();
+        final int arg_length = sentence.argIndices.size();
         int k=0;
         final ArrayList<Chunk> chunks = sentence.chunks;
-        final ArrayList<Integer> prd_ids = sentence.prd_indices;
-        final ArrayList<Integer> arg_ids = sentence.arg_indices;
+        final ArrayList<Integer> prd_ids = sentence.prdIndices;
+        final ArrayList<Integer> arg_ids = sentence.argIndices;
         final int prd_id = prd_ids.get(prd_i);
         final Chunk prd = chunks.get(prd_id);
         String dep;
@@ -321,9 +321,9 @@ public class Feature implements Serializable{
         feats[0] = (Chunk) sentence.chunks.get(arg_id);
         feats[1] = (Chunk) sentence.chunks.get(prd_id);
 
-        final int n1 = feats[0].index+1;
+        final int n1 = feats[0].INDEX+1;
 
-        if (n1 > -1 && n1 < sentence.size() && n1 != feats[1].index)
+        if (n1 > -1 && n1 < sentence.size() && n1 != feats[1].INDEX)
             feats[2] = (Chunk) sentence.chunks.get(n1);
 
         return feats;
@@ -431,21 +431,21 @@ public class Feature implements Serializable{
             if (feats[i] == null) continue;
 
             final Chunk f = feats[i];
-            final Token chead = f.chead;
+            final Word chead = f.chead;
             
             if (chead != null) {
-                feature[k++] = "1" + i + chead.r_form + c_label;                
-                feature[k++] = "2" + i + chead.cpos + c_label;
-                feature[k++] = "3" + i + chead.pos + c_label;
+                feature[k++] = "1" + i + chead.R_FORM + c_label;                
+                feature[k++] = "2" + i + chead.CPOS + c_label;
+                feature[k++] = "3" + i + chead.POS + c_label;
                 
                 if (i > 1) continue;
                 
-                feature[k++] = "4" + i + chead.form + c_label;
+                feature[k++] = "4" + i + chead.FORM + c_label;
 
-                if (!"*".equals(chead.inf_type))
-                    feature[k++] = "5" + i + chead.inf_type + c_label;
-                if (!"*".equals(chead.inf_form))
-                    feature[k++] = "6" + i + chead.inf_form + c_label;
+                if (!"*".equals(chead.INF_TYPE))
+                    feature[k++] = "5" + i + chead.INF_TYPE + c_label;
+                if (!"*".equals(chead.INF_FORM))
+                    feature[k++] = "6" + i + chead.INF_FORM + c_label;
                 
                 if (i==0) {
                     feature[k++] = "7" + f.aux + c_label;
@@ -489,23 +489,23 @@ public class Feature implements Serializable{
         final Chunk f2 = feats[1];
         
         if (f1 != null && f2 != null) {
-            final Token chead1 = f1.chead;
-            final Token chead2 = f2.chead;
+            final Word chead1 = f1.chead;
+            final Word chead2 = f2.chead;
             
             if (chead1 != null && chead2 != null) {
-                feature[k++] = "31" + chead1.form + chead2.r_form + c_label;
+                feature[k++] = "31" + chead1.FORM + chead2.R_FORM + c_label;
 
                 if (!"".equals(f1.compound_noun))
-                    feature[k++] = "32" + f1.compound_noun + chead2.r_form
+                    feature[k++] = "32" + f1.compound_noun + chead2.R_FORM
                                     + c_label;
 
                 if (!"".equals(f2.compound_sahen_noun))
-                    feature[k++] = "33" + chead1.form + f2.compound_sahen_noun
+                    feature[k++] = "33" + chead1.FORM + f2.compound_sahen_noun
                                     + c_label;
                 
                 if (!"".equals(f1.compound_joshi)) {
                     feature[k++] = "34" + f1.compound_joshi
-                                    + chead2.r_form + c_label;
+                                    + chead2.R_FORM + c_label;
                     feature[k++] = "35" + f1.compound_joshi
                                     + f2.compound_sahen_noun + c_label;
 
@@ -518,7 +518,7 @@ public class Feature implements Serializable{
             }
             
             // Distance
-            int dist = f2.index - f1.index;
+            int dist = f2.INDEX - f1.INDEX;
             String pre_post;
             
             if (dist > 0) pre_post = "PRE";
@@ -531,17 +531,17 @@ public class Feature implements Serializable{
             String label = f2.case_alter + c_label;
 
             final int arg_id;
-            if (f1.index > -1)
-                arg_id = f1.index;
+            if (f1.INDEX > -1)
+                arg_id = f1.INDEX;
             else
                 arg_id = sentence.size()-1;
-            final int prd_id = f2.index;
+            final int prd_id = f2.INDEX;
 
-            final int dep_dist = sentence.dep_dist[arg_id][prd_id];
-            final String dpath = sentence.dep_path[arg_id][prd_id] + label;
-            final String dpath0 = sentence.dep_pos_path[arg_id][prd_id] + label;
-            final String dpath1 = sentence.dep_verb_path[arg_id][prd_id] + label;
-            final String dpath2 = sentence.dep_rform_path[arg_id][prd_id] + label;            
+            final int dep_dist = sentence.depDist[arg_id][prd_id];
+            final String dpath = sentence.depPath[arg_id][prd_id] + label;
+            final String dpath0 = sentence.depPosPath[arg_id][prd_id] + label;
+            final String dpath1 = sentence.depVerbPath[arg_id][prd_id] + label;
+            final String dpath2 = sentence.depRformPath[arg_id][prd_id] + label;            
 
             
             feature[k++] = "43" + dep_dist + c_label;

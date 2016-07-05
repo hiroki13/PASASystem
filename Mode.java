@@ -7,7 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -24,11 +24,11 @@ final public class Mode {
     boolean ga, o, ni;
     int iteration, restart, rnd, n_cases, case_label, max_sent_length, weight_length;
     int[] case_labels;
-    List<Sentence> trainsentence, testsentence;    
+    ArrayList<Sentence> trainsentence, testsentence;    
     Perceptron perceptron;
     
     Mode(String[] args) throws NoSuchAlgorithmException{
-        this.optionparser = new OptionParser(args);
+        optionparser = new OptionParser(args);
         boolean mode = optionparser.isExsist("mode");
         
         if (mode) modeselect = optionparser.getString("mode");
@@ -39,19 +39,16 @@ final public class Mode {
     }
 
     final public void main() throws Exception{
-        setParameter();
         ParameterChecker p_checker = new ParameterChecker(this);
 
         // Check input files
-        p_checker.check();
+        p_checker.setParams();
 
         System.out.println("Cases to be analyzed: " + n_cases);
 
         if ("train".equals(modeselect)) {
             Reader reader = new Reader();
             
-//            trainsentence = reader.read(trainfile, n_cases, case_label);
-//            testsentence = reader.read(testfile, n_cases, case_label);
             trainsentence = reader.read(trainfile, n_cases, case_labels);
             testsentence = reader.read(testfile, n_cases, case_labels);
             max_sent_length = reader.max_sent_length;
@@ -61,6 +58,18 @@ final public class Mode {
                 trainsentence.size(), testsentence.size(), max_sent_length));
             
             train();
+        }
+        else if ("train_word".equals(modeselect)) {
+            Reader reader = new Reader();
+            
+            trainsentence = reader.readWord(trainfile, n_cases, case_labels);
+            testsentence = reader.readWord(testfile, n_cases, case_labels);
+            max_sent_length = reader.max_sent_length;
+
+            System.out.println(String.format(
+                "Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",                        
+                trainsentence.size(), testsentence.size(), max_sent_length));
+            showStatistics(trainsentence);
         }
         else if ("test".equals(modeselect)) {
             Reader reader = new Reader();
@@ -80,25 +89,6 @@ final public class Mode {
         }
     }
 
-    final public void setParameter(){
-        train = optionparser.isExsist("train");
-        test = optionparser.isExsist("test");
-        output = optionparser.isExsist("output");
-        model = optionparser.isExsist("model");
-        check_accuracy = true;
-
-        ga = optionparser.isExsist("ga");
-        o = optionparser.isExsist("o");
-        ni = optionparser.isExsist("ni");
-        
-        iteration = optionparser.getInt("iter",10);
-        restart = optionparser.getInt("restart", 10);
-        rnd = optionparser.getInt("rnd", 0);
-//        n_cases = optionparser.getInt("case", 3);
-        case_label = optionparser.getInt("case_label", 0);
-        weight_length = optionparser.getInt("weight", 500000);
-    }
-    
     private void train() throws IOException{            
         System.out.println("Hill-Climbing Restart: " + restart);
         System.out.println("Initialization Seed: " + rnd);
@@ -130,9 +120,9 @@ final public class Mode {
             }
             else if (i+1 == iteration) {
                 checker = new AccuracyChecker(n_cases);
-                checker.testAndOutput(testsentence, trainer.parser, restart,
-                                      outfile, true, true);
+                checker.testAndOutput(testsentence, trainer.parser, restart, outfile, true, true);
             }
+            
             trainer.parser.cache = true;
                 
             if (check_accuracy || i+1 == iteration) {
@@ -166,15 +156,29 @@ final public class Mode {
             showPerformance(checker);
         }
     }
-        
+    
+    private void showStatistics(ArrayList<Sentence> corpus) {
+        int[][] ttl_cases = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        for (int i=0; i<corpus.size(); ++i) {
+            Sentence sent = corpus.get(i);
+            for (int j=0; j<sent.caseStatistics.length; ++j) {
+                int[] cases = sent.caseStatistics[j];
+                for (int k=0; k<cases.length; ++k)
+                    ttl_cases[j][k] += cases[k];
+            }
+        }
+        for (int i=0; i<ttl_cases.length; ++i)
+            System.out.println(String.format("\tCase:%d  Dep: %d  Zero: %d Inter: %d",
+                    i, ttl_cases[i][0], ttl_cases[i][1], ttl_cases[i][2]));
+    }
+
     final public void showPerformance(AccuracyChecker checker) {
         for (int case_label=0; case_label<n_cases; case_label++)
             setCasePerformance(checker, case_label);
         setAllPerformance(checker);
     }
     
-    final private void setCasePerformance(AccuracyChecker checker,
-                                            int case_label) {
+    private void setCasePerformance(AccuracyChecker checker, int case_label) {
         float r_dep = checker.r_dep[case_label];
         float r_total = checker.r_dep[case_label] + checker.r_zero[case_label];
         
@@ -216,7 +220,7 @@ final public class Mode {
             (int) checker.r_zero[case_label]));    
     }
 
-    final private void setAllPerformance(AccuracyChecker checker) {
+    private void setAllPerformance(AccuracyChecker checker) {
         float r_total = 0.0f;
         float r_dep = 0.0f;
         float r_zero = 0.0f;

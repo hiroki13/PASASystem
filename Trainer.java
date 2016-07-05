@@ -4,7 +4,6 @@
  * and open the template in the editor.
  */
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -12,13 +11,13 @@ import java.util.List;
  */
 
 final public class Trainer {
-    public List<Sentence> sentencelist;
+    public ArrayList<Sentence> sentencelist;
     public Parser parser;
     public Perceptron perceptron;
     public int n_cases;
     public ArrayList[] o_feature;
 
-    Trainer(final List<Sentence> sentencelist, final int n_cases,
+    Trainer(final ArrayList<Sentence> sentencelist, final int n_cases,
              final int max_sent_len, final int weight_len) {
         this.sentencelist = sentencelist;
         this.n_cases = n_cases;
@@ -34,7 +33,7 @@ final public class Trainer {
         for(int i=0; i<this.sentencelist.size(); ++i){
             Sentence sentence = this.sentencelist.get(i);
 
-            if (!sentence.has_prds) {
+            if (!sentence.hasPrds) {
                 if (counter%1000 == 0 && counter != 0)
                     System.out.print(String.format("%d ", counter));
                 this.parser.perceptron.sent_id++;
@@ -42,15 +41,15 @@ final public class Trainer {
                 continue;
             }
             
-            int args_length = sentence.arg_indices.size();
-            int prds_length = sentence.prd_indices.size();
+            int args_length = sentence.argIndices.size();
+            int prds_length = sentence.prdIndices.size();
             this.parser.perceptron.feature.cache =
                     new ArrayList[n_cases][n_cases][prds_length]
                                  [args_length][prds_length][args_length];
             
             ArrayList o_feature = this.o_feature[i];
             if (o_feature == null) {
-                o_feature = parser.extractFeature(sentence, sentence.o_graph);
+                o_feature = parser.extractFeature(sentence, sentence.oracleGraph);
                 this.o_feature[i] = o_feature;
             }
             
@@ -59,7 +58,7 @@ final public class Trainer {
 
             final ArrayList feature = this.parser.extractFeature(sentence, graph);            
             this.parser.perceptron.updateWeights(o_feature, feature);
-            this.parser.perceptron.checkAccuracy(sentence.o_graph, graph);
+            this.parser.perceptron.checkAccuracy(sentence.oracleGraph, graph);
 
             if (counter%1000 == 0 && counter != 0)
                 System.out.print(String.format("%d ", counter));

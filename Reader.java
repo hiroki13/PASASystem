@@ -8,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -16,122 +15,110 @@ import java.util.List;
  */
 
 final public class Reader {
-    public int sent_i;
+    final String TAB = "\t";
+    final String SPACE = " ";
+    final String EOS = "EOS";
+    final Chunk NULL = setNull();
     public int max_sent_length;
     
     public Reader() {
         max_sent_length = 0;
     }
     
-    final public List<Sentence> read(final String fn, final int n_cases,
-                                      final int[] case_label) throws Exception{
-        final String delimiter = "\t";
-        sent_i = 0;
-        
+    final public ArrayList<Sentence> read(String fn, int nCases, int[] caseLabels) throws Exception{
         String line;
-        Chunk chunk;
-        Chunk NULL = setNull();
-        List<Sentence> sentenceList = new ArrayList<>();
-        Sentence sentence = new Sentence(sent_i++, n_cases);
+        int docIndex=0, sentIndex = 0, wordIndex = 0;
+        ArrayList<Sentence> corpus = new ArrayList<>();
+
+        Sentence sent = new ChunkSentence(sentIndex++, nCases);
         
-        try(BufferedReader br = new BufferedReader(
-                new InputStreamReader(new FileInputStream(fn)))){
-
-            while((line=br.readLine())!=null){
-
-                if("EOS".equals(line)){
-                    // Sentence info
-                    boolean cycle = false;  // cycle=dependency cycle
-                    sentence.chunks.add(NULL);  // NULL node set
+        try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fn)))){
+            while((line=br.readLine()) != null){
+                if(EOS.equals(line)){
+                    sent.chunks.add(NULL);  // Set the NULL node
                     
-                    for (int j=0; j<sentence.size()-1; ++j) {
-                        chunk = (Chunk) sentence.chunks.get(j);
-
-                        // check if the dependency tree has a cycle
-                        if (chunk.index == chunk.head) {
-                            cycle = true;
-                            break;
-                        }
-
-                        // set chunk params
-                        chunk.setHead();
-                        chunk.setSahenNoun();
-                        chunk.setCaseAlterSuffix();
-                        chunk.setCompounds();
-                        chunk.setAux();
-                        chunk.setRegForm();
-
-                        sentence.chunks.set(j, chunk);
+                    if (!sent.hasDepCicle()) {
+                        sent.setParams(caseLabels);
+                        corpus.add(sent);
                         
+                        if (sent.size() > max_sent_length)
+                            max_sent_length = sent.size();                        
                     }
                     
-                    if (!cycle) {
-                        // Set sentence params
-                        sentence.setParsedCases(case_label);
-                        sentence.setArgCandidates();
-                        sentence.setPrds();
-                        sentence.setOracleArgs();
-                        sentence.setDeps();
-                        sentence.setTotalNumCaseArgs();
-                        
-                        if (sentence.size() > max_sent_length) {
-                            max_sent_length = sentence.size();
-                        }
-                        
-                        sentenceList.add(sentence);
-                    }
-                    
-                    sentence = new Sentence(sent_i++, n_cases);
+                    sent = new ChunkSentence(sentIndex++, nCases);
+                    wordIndex = 0;
                 }
-                else if (line.startsWith("*")) {
-                    // Chunk info
-                    String[] chunk_info = line.split(" ");
-                    sentence.add(new Chunk(chunk_info));
-                }
-                else if (!line.startsWith("#")) {
-                    // Token info
-                    String[] token_info = line.split(delimiter);
-
-                    Token token = new Token(token_info[0], token_info[1],
-                                            token_info[2], token_info[3],
-                                            token_info[4], token_info[5],
-                                            token_info[6], token_info[7]);
-
-                    int index = sentence.size()-1;
-                    chunk = (Chunk) sentence.chunks.get(index);
-                    chunk.tokens.add(token);
-                    sentence.chunks.set(index, chunk);
-                }
+                else if (line.startsWith("*"))
+                    sent.add(new Chunk(line.split(SPACE)));
+                else if (line.startsWith("#"))
+                    sent.ntcId = docIndex++;
                 else {
-                    String[] split = line.split(" ");
-                    sentence.ntc_id = Integer.parseInt(split[1]);
+                    Chunk chunk = sent.chunks.get(sent.chunks.size()-1);
+                    Word word = new Word(wordIndex++, chunk, line.split(TAB));
+                    sent.words.add(word);
+                    chunk.words.add(word);
                 }
             }
         }
-        return sentenceList;
+        
+        return corpus;
     }
     
-    final private Chunk setNull() {
-        final String null_chunk_info = "* -2 -3 * * * * * * * * * NONE";
-        final String null_token_info = "NULL\tNULL\t*\tNULL\tNULL\t*\t*\t_";
-        Chunk chunk = new Chunk(null_chunk_info.split(" "));
-        String[] split = null_token_info.split("\t");
-        Token token = new Token(split[0], split[1], split[2], split[3],
-                                split[4], split[5], split[6], split[7]);
-        chunk.tokens.add(token);
+    final public ArrayList<Sentence> readWord(String fn, int nCases, int[] caseLabels) throws Exception{
+        String line;
+        int docIndex=0, sentIndex = 0, wordIndex = 0;
+        ArrayList<Sentence> corpus = new ArrayList<>();
+
+        Sentence sent = new WordSentence(sentIndex++, nCases);
+        
+        try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fn)))){
+            while((line=br.readLine()) != null){
+                if(EOS.equals(line)){
+                    sent.setParams();
+                    
+                    if (!sent.hasDepCicle()) {
+                        corpus.add(sent);
+                        
+                        if (sent.size() > max_sent_length)
+                            max_sent_length = sent.size();                        
+                        
+                        if (corpus.size() == 300) break;
+                    }
+                    
+                    sent = new WordSentence(sentIndex++, nCases);
+                    wordIndex = 0;
+                }
+                else if (line.startsWith("*")) {
+                    String[] depInfo = line.split(SPACE);
+                    int chunkIndex = Integer.parseInt(depInfo[1]);
+                    int chunkDepHead = Integer.parseInt(depInfo[2].substring(0, depInfo[2].length()-1));
+                    sent.chunks.add(new Chunk(chunkIndex, chunkDepHead));
+                }
+                else if (line.startsWith("#")) {
+                    sent.ntcId = docIndex++;
+                }
+                else {
+                    Chunk chunk = sent.chunks.get(sent.chunks.size()-1);
+                    Word word = new Word(wordIndex++, chunk, line.split(SPACE));
+                    sent.words.add(word);
+                    chunk.words.add(word);
+                }
+            }
+        }
+        
+        return corpus;
+    }
+    
+    private Chunk setNull() {
+        final String chunkInfo = "* -2 -3 * * * * * * * * * NONE";
+        final String tokenInfo = "NULL\tNULL\t*\tNULL\tNULL\t*\t*\t_";
+        Chunk chunk = new Chunk(chunkInfo.split(SPACE));
+        chunk.words.add(new Word(-1, chunk, tokenInfo.split("\t")));
         chunk.setHead();
         chunk.setCaseAlterSuffix();
         chunk.setAux();
         chunk.setRegForm();
         
         return chunk;
-    }
-    
-    final private int[] convertString2Int(String[] hoge) {
-        final int[] array = new int[hoge.length];
-        for (int i=0; i<hoge.length; ++i) {
-            array[i] = Integer.parseInt(hoge[i]);
-        }
-        return array;
     }
 }
