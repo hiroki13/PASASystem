@@ -68,11 +68,12 @@ final public class WordSentence extends Sentence {
         setPrds();
         setArgs();
         setCaseArgIndex();
+        setOracleGraph();
         setCaseStatistics();
     }
     
     final public void setWordDeps() {
-        for (int i=0; i<chunks.size(); ++i) {
+        for (int i=0; i<chunks.size()-1; ++i) {
             Chunk chunk = chunks.get(i);
             ArrayList<Word> chunkWords = chunk.words;
             int chunkHead = chunk.DEP_HEAD_INDEX;
@@ -104,7 +105,6 @@ final public class WordSentence extends Sentence {
         for (int i=0; i<words.size(); ++i)
             if (words.get(i).IS_PRD) prdIndices.add(i);
         if (prdIndices.size() > 0) hasPrds = true;
-        hasPrds = false;
     }
     
     final public void setArgs() {
@@ -117,62 +117,55 @@ final public class WordSentence extends Sentence {
         oracleGraph = new int[nPrds][nCases];
 
         for (int prd_i=0; prd_i<nPrds; ++prd_i) {
-            Word prd = words.get((int) prdIndices.get(prd_i));
-
-            for (int case_label=0; case_label<this.nCases; case_label++)
-                setOracleCaseArg(prd_i, prd, case_label);
+            Word prd = words.get(prdIndices.get(prd_i));
+            setOracleCaseArg(prd_i, prd);
         }
     }
 
-    private void setOracleCaseArg(int prd_i, Word prd, int caseLabel) {
-        final int[] oracle_dep_arg = prd.parsedCases[caseLabel];
-        final int[] oracle_zero_arg = prd.parsedZeroCases[caseLabel];
+    private void setOracleCaseArg(int prd_i, Word prd) {
+        // The last arg is the "NULL" node
+        if (prd.ga > -1)
+            oracleGraph[prd_i][0] = prd.ga;
+        else if (prd.zeroGa > -1)
+            oracleGraph[prd_i][0] = prd.zeroGa;
+        else
+            oracleGraph[prd_i][0] = argIndices.size() - 1;
 
-        boolean null_dep = hasNoOracle(prd_i, oracle_dep_arg, caseLabel);
-        boolean null_zero = hasNoOracle(prd_i, oracle_zero_arg, caseLabel);
-
-        if (null_dep && null_zero) {
-            int oracle_arg_id = this.size()-1; // indicating the "NULL" node            
-            oracleGraph[prd_i][caseLabel] = this.argIndices.indexOf(oracle_arg_id);
-        }
-    }
-
-    private boolean hasNoOracle(int prd_i, int[] oracle_args, int case_label) {
-        for (int i=0; i<oracle_args.length; ++i) {        
-            int oracle_arg_id = oracle_args[i];
-
-            if (oracle_arg_id < 0) return true;          
-                    
-            Chunk arg = (Chunk) this.chunks.get(oracle_arg_id);
-            
-            if (arg.chead == null) continue;
-                                
-            this.oracleGraph[prd_i][case_label] = this.argIndices.indexOf(oracle_arg_id);            
-            break;
-        }
-
-        return false;
-    }
+        if (prd.o > -1)
+            oracleGraph[prd_i][1] = prd.o;
+        else if (prd.zeroO > -1)
+            oracleGraph[prd_i][1] = prd.zeroO;
+        else
+            oracleGraph[prd_i][1] = argIndices.size() - 1;
         
+        if (prd.ni > -1)
+            oracleGraph[prd_i][2] = prd.ni;
+        else if (prd.zeroNi > -1)
+            oracleGraph[prd_i][2] = prd.zeroNi;
+        else
+            oracleGraph[prd_i][2] = argIndices.size() - 1;
+    }
+
     final public void setDepPaths() {
-        final int sent_length = this.size();
+        int nWords = this.size();
         
-        depDist = new int[sent_length][sent_length];
-        depPath = new String[sent_length][sent_length];
-        depPosPath = new String[sent_length][sent_length];
-        depAuxPath = new String[sent_length][sent_length];
+        depDist = new int[nWords][nWords];
+        depPath = new String[nWords][nWords];
+        depPosPath = new String[nWords][nWords];
+        depAuxPath = new String[nWords][nWords];
 
         for (int i=0; i<this.size(); ++i) {
+            Word word1 = words.get(i);
             int[] tmpDepDist = depDist[i];
             String[] tmpDepPath = depPath[i];
             String[] tmpDepPosPath = depPosPath[i];
             String[] tmpDepAuxPath = depAuxPath[i];
             
             for (int j=0; j<this.size(); ++j) {
-                ArrayList path = getDepPath(i, j);
+                Word word2 = words.get(j);
+                ArrayList path = getDepPath(word1.INDEX, word2.INDEX);
 
-                if (path.isEmpty())
-                    return;
+                if (path.isEmpty()) return;
                 
                 tmpDepDist[j] = path.size()-1;
                 tmpDepPath[j] = getDepPathPhi(path);

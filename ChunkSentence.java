@@ -120,15 +120,15 @@ final public class ChunkSentence extends Sentence {
     }
         
     final public void setDepPaths() {
-        final int sent_length = this.size();
+        int nChunks = this.size();
         
-        depDist = new int[sent_length][sent_length];
-        depPath = new String[sent_length][sent_length];
-        depPosPath = new String[sent_length][sent_length];
-        depVerbPath = new String[sent_length][sent_length];
-        depRformPath = new String[sent_length][sent_length];
-        depAuxPath = new String[sent_length][sent_length];
-        depJoshiPath = new String[sent_length][sent_length];
+        depDist = new int[nChunks][nChunks];
+        depPath = new String[nChunks][nChunks];
+        depPosPath = new String[nChunks][nChunks];
+        depVerbPath = new String[nChunks][nChunks];
+        depRformPath = new String[nChunks][nChunks];
+        depAuxPath = new String[nChunks][nChunks];
+        depJoshiPath = new String[nChunks][nChunks];
 
         for (int i=0; i<this.size(); ++i) {
             final Chunk chunk1 = (Chunk) chunks.get(i);

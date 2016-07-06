@@ -18,11 +18,12 @@ final public class Reader {
     final String TAB = "\t";
     final String SPACE = " ";
     final String EOS = "EOS";
-    final Chunk NULL = setNull();
-    public int max_sent_length;
+    final Chunk NULL_CHUNK = setNullChunk();
+    final Word NULL_WORD = NULL_CHUNK.words.get(0);
+    public int maxSentLen;
     
     public Reader() {
-        max_sent_length = 0;
+        maxSentLen = 0;
     }
     
     final public ArrayList<Sentence> read(String fn, int nCases, int[] caseLabels) throws Exception{
@@ -35,14 +36,14 @@ final public class Reader {
         try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fn)))){
             while((line=br.readLine()) != null){
                 if(EOS.equals(line)){
-                    sent.chunks.add(NULL);  // Set the NULL node
+                    sent.chunks.add(NULL_CHUNK);  // Set the NULL node
                     
                     if (!sent.hasDepCicle()) {
                         sent.setParams(caseLabels);
                         corpus.add(sent);
                         
-                        if (sent.size() > max_sent_length)
-                            max_sent_length = sent.size();                        
+                        if (sent.size() > maxSentLen)
+                            maxSentLen = sent.size();                        
                     }
                     
                     sent = new ChunkSentence(sentIndex++, nCases);
@@ -73,16 +74,18 @@ final public class Reader {
         
         try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fn)))){
             while((line=br.readLine()) != null){
-                if(EOS.equals(line)){
+                if(EOS.equals(line)) {
+                    sent.chunks.add(NULL_CHUNK);
+                    sent.words.add(NULL_WORD);
                     sent.setParams();
                     
                     if (!sent.hasDepCicle()) {
                         corpus.add(sent);
                         
-                        if (sent.size() > max_sent_length)
-                            max_sent_length = sent.size();                        
+                        if (sent.size() > maxSentLen)
+                            maxSentLen = sent.size();                        
                         
-                        if (corpus.size() == 300) break;
+                        if (corpus.size() == 100) break;
                     }
                     
                     sent = new WordSentence(sentIndex++, nCases);
@@ -109,16 +112,21 @@ final public class Reader {
         return corpus;
     }
     
-    private Chunk setNull() {
-        final String chunkInfo = "* -2 -3 * * * * * * * * * NONE";
+    private Chunk setNullChunk() {
+//        final String chunkInfo = "* -2 -3 * * * * * * * * * NONE";
+        final String chunkInfo = "* -2 -3D";
         final String tokenInfo = "NULL\tNULL\t*\tNULL\tNULL\t*\t*\t_";
-        Chunk chunk = new Chunk(chunkInfo.split(SPACE));
+        String[] depInfo = chunkInfo.split(SPACE);        
+        int chunkIndex = Integer.parseInt(depInfo[1]);        
+        int chunkDepHead = Integer.parseInt(depInfo[2].substring(0, depInfo[2].length()-1));
+
+        Chunk chunk = new Chunk(chunkIndex, chunkDepHead);
         chunk.words.add(new Word(-1, chunk, tokenInfo.split("\t")));
         chunk.setHead();
         chunk.setCaseAlterSuffix();
         chunk.setAux();
-        chunk.setRegForm();
-        
+        chunk.setRegForm();        
+
         return chunk;
     }
 }

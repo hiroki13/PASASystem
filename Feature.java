@@ -6,7 +6,6 @@
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -16,54 +15,65 @@ import java.util.List;
 public class Feature implements Serializable{
     //[case][case][prd][prd][arg][arg]
     public ArrayList[][][][][][] cache;
-    public List<Sentence> sentencelist;
-    public int case_length;
-    public int w;
+    public ArrayList<Sentence> sents;
+    public int nCases;
+    public int weightSize;
     
-    public Feature(int c_length) {
-        case_length = c_length;
+    public Feature(int nCases) {
+        this.nCases = nCases;
     }
     
-    final public ArrayList<Integer> extractFeature(final Sentence sentence,
-                                                     final int arg_id,
-                                                     final int prd_id,
-                                                     final int case_label){
-        final ArrayList<Integer> usedFeatures = new ArrayList<>();
-        final Chunk[] feats = makePhi(arg_id, prd_id, sentence);
+    final public ArrayList getFeature(Sentence sent, int argIndex, int prdIndex, int caseLabel){
+        ArrayList<Integer> usedFeatures = new ArrayList();
+        Chunk[] phiWindow = getPhiWindow(argIndex, prdIndex, sent);
 
         // Unigram feature
-        usedFeatures.addAll(uniFeature(feats, case_label));
+        usedFeatures.addAll(getUniFeature(phiWindow, caseLabel));
         
         // Combinatorial features
-        usedFeatures.addAll(biFeature(feats, sentence, case_label));
+        usedFeatures.addAll(getBiFeature(phiWindow, sent, caseLabel));
+            
+        return usedFeatures;
+    }
+
+    final public ArrayList getWordFeature(Sentence sent, int argIndex, int prdIndex, int caseLabel){
+        ArrayList<Integer> usedFeatures = new ArrayList();
+        Word[] phiWindow = getPhiWindow(argIndex, prdIndex, sent.words);
+
+        // Unigram feature
+        usedFeatures.addAll(getUniFeature(phiWindow, caseLabel));
+        
+        // Combinatorial features
+        ArrayList biPhi = getBiFeature(phiWindow, sent, caseLabel);
+        if (biPhi != null)
+            usedFeatures.addAll(biPhi);
             
         return usedFeatures;
     }
 
 
-    final public ArrayList<Integer> extractFeature(final Sentence sentence,
-                                                     final int[][] graph){
-        final ArrayList<Integer> usedFeatures = new ArrayList<>();
+    final public ArrayList getFeature(Sentence sent, int[][] graph){
+        ArrayList<Integer> usedFeatures = new ArrayList<>();
 
-        final ArrayList<Chunk> chunks = sentence.chunks;
-        final ArrayList<Integer> args = sentence.argIndices;
-        final ArrayList<Integer> prds = sentence.prdIndices;
-        final int prd_length = prds.size();
+        ArrayList<Chunk> chunks = sent.chunks;
+        ArrayList<Integer> args = sent.argIndices;
+        ArrayList<Integer> prds = sent.prdIndices;
+        int nPrds = prds.size();
         
-        final int[][] t_graph = genTGraph(prd_length, graph); // tenchi
+        final int[][] t_graph = genTGraph(nPrds, graph); // tenchi
         
-        for (int case_label1=0; case_label1<case_length; case_label1++) {
+        for (int case_label1=0; case_label1<nCases; case_label1++) {
             final int[] tmp_graph1 = t_graph[case_label1];
             final ArrayList[][][][][] tmp_cache1 = cache[case_label1];
             
-            for (int case_label2=case_label1; case_label2<case_length; case_label2++) {
+            for (int case_label2=case_label1; case_label2<nCases; case_label2++) {
                 final int[] tmp_graph2 = t_graph[case_label2];
                 final ArrayList[][][][] tmp_cache2 = tmp_cache1[case_label2];
                 
-                usedFeatures.addAll(extractFeature(sentence, tmp_graph1,
+                usedFeatures.addAll(extractFeature(sent, tmp_graph1,
                                                    tmp_graph2, case_label1,
                                                    case_label2, chunks,
-                                                   args, prds, prd_length,
+                                                   args, prds, nPrds,
                                                    tmp_cache2));
             }
         }
@@ -71,17 +81,17 @@ public class Feature implements Serializable{
         return usedFeatures;
     }
     
-    final private int[][] genTGraph(final int prd_length, final int[][] graph) {
-        final int[][] t_graph = new int[case_length][prd_length];
+    private int[][] genTGraph(final int prd_length, final int[][] graph) {
+        final int[][] t_graph = new int[nCases][prd_length];
         for (int prd_i=0; prd_i<prd_length; prd_i++) {
-            for (int case_label=0; case_label<case_length; case_label++) {
+            for (int case_label=0; case_label<nCases; case_label++) {
                 t_graph[case_label][prd_i] = graph[prd_i][case_label];
             }
         }
         return t_graph;
     }
         
-    final private ArrayList<Integer> extractFeature(final Sentence sentence,
+    private ArrayList<Integer> extractFeature(final Sentence sentence,
                                                       final int[] graph1,
                                                       final int[] graph2,
                                                       final int case_label1,
@@ -240,7 +250,7 @@ public class Feature implements Serializable{
                 for(int l=0; l<k; ++l){
                     if (feature[l] == null) continue;
                     String f = feature[l];
-                    tmp_feature.add((f.hashCode() >>> 1) % w);
+                    tmp_feature.add((f.hashCode() >>> 1) % weightSize);
                 }
                 
                 usedFeatures.addAll(tmp_feature);
@@ -308,44 +318,19 @@ public class Feature implements Serializable{
 
         for(int i=0; i<feature.length; ++i) {
             String f = feature[i];
-            usedFeatures.add((f.hashCode() >>> 1) % w);
+            usedFeatures.add((f.hashCode() >>> 1) % weightSize);
         }
         
         return usedFeatures;
     }
-            
-    
-    final private Chunk[] makePhi(final int arg_id, final int prd_id,
-                                   final Sentence sentence) {
-        final Chunk[] feats = new Chunk[3];
-        feats[0] = (Chunk) sentence.chunks.get(arg_id);
-        feats[1] = (Chunk) sentence.chunks.get(prd_id);
-
-        final int n1 = feats[0].INDEX+1;
-
-        if (n1 > -1 && n1 < sentence.size() && n1 != feats[1].INDEX)
-            feats[2] = (Chunk) sentence.chunks.get(n1);
-
-        return feats;
-    }
-    
-    final private String direction(final int prd_id1, final int prd_id2) {
+                
+    private String direction(final int prd_id1, final int prd_id2) {
         if (prd_id1 < prd_id2) return "L";
         else if (prd_id1 > prd_id2) return "R";
         else return "N";
     }
 
-    final private String depInfo(String dep) {
-        if ("0".equals(dep)) return "A";
-        else if ("1".equals(dep)) return "B";
-        else if ("00".equals(dep)) return "C";
-        else if ("01".equals(dep)) return "D";
-        else if ("10".equals(dep)) return "E";
-        else if ("11".equals(dep)) return "F";
-        else return "G";
-    }
-
-    final private String[] position(final int arg_id1, final int arg_id2,
+    private String[] position(final int arg_id1, final int arg_id2,
                                      final int prd_id1, final int prd_id2,
                                      final int arg_length) {
         String a_posit1 = ""; 
@@ -388,7 +373,7 @@ public class Feature implements Serializable{
     }
 
     
-    final private String position_coarg(final int arg_id1, final int prd_id1,
+    private String position_coarg(final int arg_id1, final int prd_id1,
                                           final int prd_id2, final int arg_length) {
         String posit = "";
         if (arg_id1 == arg_length-1)
@@ -405,26 +390,8 @@ public class Feature implements Serializable{
         return posit;
     }
 
-    final private String dist(final int id1, final int id2,
-                              final int arg_length) {
-        if (id1 == arg_length) return "N1";
-        else if (id2 == arg_length) return "N2";
-        
-        final int dist = id2 -id1;
-
-        if (dist == 1) return "A";
-        else if (dist >= 2 && dist <= 5) return "B";
-        else if (dist > 6) return "C";
-        else if (dist == -1) return "D";
-        else if (dist <= -2 && dist >= -5) return "E";
-        else if (dist < -6) return "F";
-        else return "G";
-    }
-    
-        
-    final private ArrayList uniFeature(final Chunk[] feats, final int c_label) {
-        final ArrayList usedFeatures = new ArrayList<>();
-        final String[] feature = new String[30];
+    private ArrayList getUniFeature(Chunk[] feats, int caseLabel) {
+        String[] feature = new String[30];
         int k = 0;
         
         for(int i=0; i<3; ++i){
@@ -434,148 +401,235 @@ public class Feature implements Serializable{
             final Word chead = f.chead;
             
             if (chead != null) {
-                feature[k++] = "1" + i + chead.R_FORM + c_label;                
-                feature[k++] = "2" + i + chead.CPOS + c_label;
-                feature[k++] = "3" + i + chead.POS + c_label;
+                feature[k++] = "1" + i + chead.R_FORM + caseLabel;                
+                feature[k++] = "2" + i + chead.CPOS + caseLabel;
+                feature[k++] = "3" + i + chead.POS + caseLabel;
                 
                 if (i > 1) continue;
                 
-                feature[k++] = "4" + i + chead.FORM + c_label;
+                feature[k++] = "4" + i + chead.FORM + caseLabel;
 
                 if (!"*".equals(chead.INF_TYPE))
-                    feature[k++] = "5" + i + chead.INF_TYPE + c_label;
+                    feature[k++] = "5" + i + chead.INF_TYPE + caseLabel;
                 if (!"*".equals(chead.INF_FORM))
-                    feature[k++] = "6" + i + chead.INF_FORM + c_label;
+                    feature[k++] = "6" + i + chead.INF_FORM + caseLabel;
                 
                 if (i==0) {
-                    feature[k++] = "7" + f.aux + c_label;
+                    feature[k++] = "7" + f.aux + caseLabel;
                     
                     if (!"".equals(f.compound_noun))
-                        feature[k++] = "8" + f.compound_noun + c_label;
+                        feature[k++] = "8" + f.compound_noun + caseLabel;
 
                     if (!"".equals(f.compound_joshi))
-                        feature[k++] = "9" + f.compound_joshi + c_label;
+                        feature[k++] = "9" + f.compound_joshi + caseLabel;
                 }
 
                 if (i==1) {
-                    feature[k++] = "10" + f.case_alter + c_label;
+                    feature[k++] = "10" + f.case_alter + caseLabel;
 
                     if (!"".equals(f.compound_sahen_noun)) {
-                        feature[k++] = "11" + f.compound_sahen_noun + c_label;
+                        feature[k++] = "11" + f.compound_sahen_noun + caseLabel;
                     }
                 }               
             }
         }
 
-        // Feature ID registration
-        for(int i=0; i<feature.length; ++i) {
-            if (feature[i] == null) continue;
-            String f = feature[i];
-            usedFeatures.add((f.hashCode() >>> 1) % w);
-        }
-                
-        return usedFeatures;        
+        return getPhiId(feature);        
     }
     
     
-    final private ArrayList biFeature(final Chunk[] feats,
-                                       final Sentence sentence,
-                                       final int c_label) {
-        final ArrayList usedFeatures = new ArrayList<>();
-        final String[] feature = new String[30];
-        int k = 0;
-
-        final Chunk f1 = feats[0];
-        final Chunk f2 = feats[1];
+    private ArrayList getUniFeature(Word[] phiWindow, int caseLabel) {
+        String[] feature = new String[20];
+        int phiIndex = 0;
         
-        if (f1 != null && f2 != null) {
-            final Word chead1 = f1.chead;
-            final Word chead2 = f2.chead;
+        for(int i=0; i<3; ++i){
+            if (phiWindow[i] == null) continue;
+
+            Word word = phiWindow[i];
+            
+            if (word != null) {
+                feature[phiIndex++] = "1" + i + word.R_FORM + caseLabel;                
+                feature[phiIndex++] = "2" + i + word.CPOS + caseLabel;
+                feature[phiIndex++] = "3" + i + word.POS + caseLabel;
+                
+                if (i > 1) continue;
+                
+                feature[phiIndex++] = "4" + i + word.FORM + caseLabel;
+
+                if (!"*".equals(word.INF_TYPE))
+                    feature[phiIndex++] = "5" + i + word.INF_TYPE + caseLabel;
+                if (!"*".equals(word.INF_FORM))
+                    feature[phiIndex++] = "6" + i + word.INF_FORM + caseLabel;
+                
+            }
+        }
+
+        return getPhiId(feature);
+    }
+    
+    private ArrayList getPhiId(String[] feature) {
+        ArrayList<Integer> featureId = new ArrayList();
+        for(int i=0; i<feature.length; ++i) {
+            if (feature[i] == null) break;
+            featureId.add((feature[i].hashCode() >>> 1) % weightSize);
+        }
+        return featureId;
+    }
+    
+    private ArrayList getBiFeature(Chunk[] feats, Sentence sent, int caseLabel) {
+        String[] feature = new String[30];
+        int phiIndex = 0;
+
+        Chunk phi1 = feats[0];
+        Chunk phi2 = feats[1];
+        
+        if (phi1 != null && phi2 != null) {
+            Word chead1 = phi1.chead;
+            Word chead2 = phi2.chead;
             
             if (chead1 != null && chead2 != null) {
-                feature[k++] = "31" + chead1.FORM + chead2.R_FORM + c_label;
+                feature[phiIndex++] = "31" + chead1.FORM + chead2.R_FORM + caseLabel;
 
-                if (!"".equals(f1.compound_noun))
-                    feature[k++] = "32" + f1.compound_noun + chead2.R_FORM
-                                    + c_label;
+                if (!"".equals(phi1.compound_noun))
+                    feature[phiIndex++] = "32" + phi1.compound_noun + chead2.R_FORM + caseLabel;
 
-                if (!"".equals(f2.compound_sahen_noun))
-                    feature[k++] = "33" + chead1.FORM + f2.compound_sahen_noun
-                                    + c_label;
+                if (!"".equals(phi2.compound_sahen_noun))
+                    feature[phiIndex++] = "33" + chead1.FORM + phi2.compound_sahen_noun + caseLabel;
                 
-                if (!"".equals(f1.compound_joshi)) {
-                    feature[k++] = "34" + f1.compound_joshi
-                                    + chead2.R_FORM + c_label;
-                    feature[k++] = "35" + f1.compound_joshi
-                                    + f2.compound_sahen_noun + c_label;
+                if (!"".equals(phi1.compound_joshi)) {
+                    feature[phiIndex++] = "34" + phi1.compound_joshi + chead2.R_FORM + caseLabel;
+                    feature[phiIndex++] = "35" + phi1.compound_joshi + phi2.compound_sahen_noun + caseLabel;
 
-                    feature[k++] = "36" + f1.compound_joshi 
-                                    + f2.case_alter + c_label;
-                    feature[k++] = "37" + f1.compound_joshi
-                                    + f2.compound_sahen_noun
-                                    + f2.case_alter + c_label;
+                    feature[phiIndex++] = "36" + phi1.compound_joshi + phi2.case_alter + caseLabel;
+                    feature[phiIndex++] = "37" + phi1.compound_joshi + phi2.compound_sahen_noun + phi2.case_alter + caseLabel;
                 }
             }
             
             // Distance
-            int dist = f2.INDEX - f1.INDEX;
+            int dist = phi2.INDEX - phi1.INDEX;
             String pre_post;
             
             if (dist > 0) pre_post = "PRE";
             else pre_post = "POST";
 
-            feature[k++] = "41_" + pre_post + c_label;
-            feature[k++] = "42_" + pre_post + dist + c_label;
+            feature[phiIndex++] = "41_" + pre_post + "_" + caseLabel;
+            feature[phiIndex++] = "42_" + pre_post + "_" + dist + "_" + caseLabel;
             
             // Dependency Path
-            String label = f2.case_alter + c_label;
+            String label = phi2.case_alter + caseLabel;
 
-            final int arg_id;
-            if (f1.INDEX > -1)
-                arg_id = f1.INDEX;
-            else
-                arg_id = sentence.size()-1;
-            final int prd_id = f2.INDEX;
+            int argIndex;
+            if (phi1.INDEX > -1) argIndex = phi1.INDEX;
+            else argIndex = sent.size()-1;
+            int prdIndex = phi2.INDEX;
 
-            final int dep_dist = sentence.depDist[arg_id][prd_id];
-            final String dpath = sentence.depPath[arg_id][prd_id] + label;
-            final String dpath0 = sentence.depPosPath[arg_id][prd_id] + label;
-            final String dpath1 = sentence.depVerbPath[arg_id][prd_id] + label;
-            final String dpath2 = sentence.depRformPath[arg_id][prd_id] + label;            
+            int depDist = sent.depDist[argIndex][prdIndex];
+            String dpath = sent.depPath[argIndex][prdIndex] + label;
+            String dpath0 = sent.depPosPath[argIndex][prdIndex] + label;
+            String dpath1 = sent.depVerbPath[argIndex][prdIndex] + label;
+            String dpath2 = sent.depRformPath[argIndex][prdIndex] + label;            
 
             
-            feature[k++] = "43" + dep_dist + c_label;
+            feature[phiIndex++] = "43" + depDist + caseLabel;
             
-            feature[k++] = "44" + dpath;
-            feature[k++] = "45" + dpath0;
-            feature[k++] = "46" + dpath1;
-            feature[k++] = "47" + dpath2;
+            feature[phiIndex++] = "44" + dpath;
+            feature[phiIndex++] = "45" + dpath0;
+            feature[phiIndex++] = "46" + dpath1;
+            feature[phiIndex++] = "47" + dpath2;
 
-            String p_form = f2.reg_form;
-            String a_form = f1.reg_form;
+            String p_form = phi2.reg_form;
+            String a_form = phi1.reg_form;
             
-            feature[k++] = "51" + dpath + p_form;
-            feature[k++] = "52" + dpath1 + p_form;
-            feature[k++] = "53" + dpath2 + p_form;
+            feature[phiIndex++] = "51" + dpath + p_form;
+            feature[phiIndex++] = "52" + dpath1 + p_form;
+            feature[phiIndex++] = "53" + dpath2 + p_form;
 
-            feature[k++] = "54" + dpath + a_form;
-            feature[k++] = "55" + dpath1 + a_form;
-            feature[k++] = "56" + dpath2 + a_form;
+            feature[phiIndex++] = "54" + dpath + a_form;
+            feature[phiIndex++] = "55" + dpath1 + a_form;
+            feature[phiIndex++] = "56" + dpath2 + a_form;
             
-            feature[k++] = "57" + dpath + a_form + p_form;
-            feature[k++] = "58" + dpath1 + a_form + p_form;
-            feature[k++] = "59" + dpath2 + a_form + p_form;
+            feature[phiIndex++] = "57" + dpath + a_form + p_form;
+            feature[phiIndex++] = "58" + dpath1 + a_form + p_form;
+            feature[phiIndex++] = "59" + dpath2 + a_form + p_form;
             
         }
         
-        // Feature ID registration
-        for(int i=0; i<feature.length; ++i) {
-            if (feature[i] == null) continue;
-            String f = feature[i];
-            usedFeatures.add((f.hashCode() >>> 1) % w);
+        return getPhiId(feature);
+    }
+    
+    private ArrayList getBiFeature(Word[] phiWindow, Sentence sent, int caseLabel) {
+        String[] feature = new String[30];
+        int phiIndex = 0;
+
+        Word word1 = phiWindow[0];
+        Word word2 = phiWindow[1];
+        
+        if (word1 != null && word2 != null) {
+            feature[phiIndex++] = "31" + word1.FORM + "_" + word2.R_FORM + "_" + caseLabel;
+            
+            // Distance
+            int dist = word2.INDEX - word1.INDEX;
+            String pre_post;
+            
+            if (dist > 0) pre_post = "PRE";
+            else pre_post = "POST";
+
+            feature[phiIndex++] = "41_" + pre_post + "_" + caseLabel;
+            feature[phiIndex++] = "42_" + pre_post + "_" + dist + "_" + caseLabel;
+            
+            // Dependency Path
+            int argIndex;
+            if (word1.INDEX > -1) argIndex = word1.INDEX;
+            else argIndex = sent.size()-1;
+            int prdIndex = word2.INDEX;
+            
+            if (argIndex < 0 || prdIndex < 0)
+                return null;
+
+            int depDist = sent.depDist[argIndex][prdIndex];
+            String dpath = sent.depPath[argIndex][prdIndex] + caseLabel;
+            String dpath0 = sent.depPosPath[argIndex][prdIndex] + caseLabel;
+
+            
+            feature[phiIndex++] = "43" + depDist + caseLabel;
+            
+            feature[phiIndex++] = "44" + dpath;
+            feature[phiIndex++] = "45" + dpath0;
+
+            String a_form = word1.R_FORM;
+            String p_form = word2.R_FORM;
+            
+            feature[phiIndex++] = "51" + dpath + p_form;
+            feature[phiIndex++] = "54" + dpath + a_form;            
+            feature[phiIndex++] = "57" + dpath + a_form + p_form;
+            
         }
         
-        return usedFeatures;
+        return getPhiId(feature);
+    }
+
+    private Chunk[] getPhiWindow(int argIndex, int prdIndex, Sentence sent) {
+        Chunk[] phiWindow = new Chunk[3];
+        phiWindow[0] = sent.chunks.get(argIndex);
+        phiWindow[1] = sent.chunks.get(prdIndex);
+
+        int n1 = phiWindow[0].INDEX + 1;
+        if (n1 > -1 && n1 < sent.size() && n1 != phiWindow[1].INDEX)
+            phiWindow[2] = sent.chunks.get(n1);
+
+        return phiWindow;
+    }
+    
+    private Word[] getPhiWindow(int arg_i, int prdIndex, ArrayList<Word> words) {
+        Word[] phiWindow = new Word[3];
+        phiWindow[0] = words.get(arg_i);
+        phiWindow[1] = words.get(prdIndex);
+
+        int nextArgIndex = phiWindow[0].INDEX + 1;
+        if (nextArgIndex > -1 && nextArgIndex < words.size() && nextArgIndex != phiWindow[1].INDEX)
+            phiWindow[2] = words.get(nextArgIndex);
+
+        return phiWindow;
     }
     
 }

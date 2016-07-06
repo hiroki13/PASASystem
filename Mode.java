@@ -18,13 +18,13 @@ import java.util.Random;
 final public class Mode {
     
     final OptionParser optionparser;
-    String modeselect;    
-    String trainfile, testfile, outfile, modelfile;
+    String modeselect, parser;    
+    String trainFile, testFile, outfile, modelfile;
     boolean train, test, output, model, check_accuracy;
     boolean ga, o, ni;
-    int iteration, restart, rnd, n_cases, case_label, max_sent_length, weight_length;
-    int[] case_labels;
-    ArrayList<Sentence> trainsentence, testsentence;    
+    int iteration, restart, rnd, nCases, maxSentLen, weightSize;
+    int[] caseLabels;
+    ArrayList<Sentence> trainSent, testSent;    
     Perceptron perceptron;
     
     Mode(String[] args) throws NoSuchAlgorithmException{
@@ -44,38 +44,37 @@ final public class Mode {
         // Check input files
         p_checker.setParams();
 
-        System.out.println("Cases to be analyzed: " + n_cases);
+        System.out.println("Cases to be analyzed: " + nCases);
 
         if ("train".equals(modeselect)) {
             Reader reader = new Reader();
             
-            trainsentence = reader.read(trainfile, n_cases, case_labels);
-            testsentence = reader.read(testfile, n_cases, case_labels);
-            max_sent_length = reader.max_sent_length;
+            trainSent = reader.read(trainFile, nCases, caseLabels);
+            testSent = reader.read(testFile, nCases, caseLabels);
+            maxSentLen = reader.maxSentLen;
 
-            System.out.println(String.format(
-                "Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",                        
-                trainsentence.size(), testsentence.size(), max_sent_length));
+            System.out.println(String.format("Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",                        
+                trainSent.size(), testSent.size(), maxSentLen));
             
             train();
         }
         else if ("train_word".equals(modeselect)) {
             Reader reader = new Reader();
             
-            trainsentence = reader.readWord(trainfile, n_cases, case_labels);
-            testsentence = reader.readWord(testfile, n_cases, case_labels);
-            max_sent_length = reader.max_sent_length;
+            trainSent = reader.readWord(trainFile, nCases, caseLabels);
+            testSent = reader.readWord(testFile, nCases, caseLabels);
+            maxSentLen = reader.maxSentLen;
 
-            System.out.println(String.format(
-                "Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",                        
-                trainsentence.size(), testsentence.size(), max_sent_length));
-            showStatistics(trainsentence);
+            System.out.println(String.format("Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",
+                    trainSent.size(), testSent.size(), maxSentLen));
+            showStatistics(trainSent);
+            trainWord();
         }
         else if ("test".equals(modeselect)) {
             Reader reader = new Reader();
 
-            testsentence = reader.read(testfile, n_cases, case_labels);
-            System.out.println("Test Sents: " + testsentence.size());
+            testSent = reader.read(testFile, nCases, caseLabels);
+            System.out.println("Test Sents: " + testSent.size());
             System.out.println("Model Loaded...");
 
             ObjectInputStream perceptronStream
@@ -93,14 +92,13 @@ final public class Mode {
         System.out.println("Hill-Climbing Restart: " + restart);
         System.out.println("Initialization Seed: " + rnd);
 
-        Trainer trainer = new Trainer(trainsentence, n_cases,
-                                      max_sent_length, weight_length);
+        Trainer trainer = new Trainer(parser, trainSent, nCases, maxSentLen, weightSize);
 
         // Set random seed for ititial graphs
         if (rnd != 0) trainer.parser.rnd = new Random(rnd);
         else trainer.parser.rnd = new Random();
         
-        trainer.parser.case_length = n_cases;
+        trainer.parser.nCases = nCases;
                         
         System.out.println("TRAINING START");
 
@@ -115,18 +113,53 @@ final public class Mode {
             System.out.println("\tTime: " + (time2-time1) + " ms");
                 
             if (i+1<iteration && check_accuracy) {                
-                checker = new AccuracyChecker(n_cases);
-                checker.test(testsentence, trainer.parser, restart, true);
+                checker = new AccuracyChecker(nCases);
+                checker.test(testSent, trainer.parser, restart, true);
             }
             else if (i+1 == iteration) {
-                checker = new AccuracyChecker(n_cases);
-                checker.testAndOutput(testsentence, trainer.parser, restart, outfile, true, true);
+                checker = new AccuracyChecker(nCases);
+                checker.testAndOutput(testSent, trainer.parser, restart, outfile, true, true);
             }
             
-            trainer.parser.cache = true;
+            trainer.parser.hasCache = true;
                 
             if (check_accuracy || i+1 == iteration) {
-                double time = testsentence.size()/(((double) checker.time)/1000.0);    
+                double time = testSent.size()/(((double) checker.time)/1000.0);    
+                System.out.println("\tTime: " + time + "sent./sec.");
+                showPerformance(checker);
+            } 
+        }
+    }
+    
+    private void trainWord() throws IOException{            
+        Trainer trainer = new Trainer(parser, trainSent, nCases, maxSentLen, weightSize);
+        trainer.parser.nCases = nCases;
+                        
+        System.out.println("TRAINING START");
+
+        AccuracyChecker checker = null;
+
+        for (int i=0; i<iteration; i++) {
+            System.out.println(String.format("\nIteration %d: ", i+1));
+                
+            long time1 = System.currentTimeMillis();
+            trainer.train();
+            long time2 = System.currentTimeMillis();
+            System.out.println("\tTime: " + (time2-time1) + " ms");
+                
+            if (i+1<iteration && check_accuracy) {                
+                checker = new AccuracyChecker(nCases);
+                checker.test(testSent, trainer.parser, true);
+            }
+            else if (i+1 == iteration) {
+                checker = new AccuracyChecker(nCases);
+                checker.testAndOutput(testSent, trainer.parser, restart, outfile, true, true);
+            }
+            
+            trainer.parser.hasCache = true;
+                
+            if (check_accuracy || i+1 == iteration) {
+                double time = testSent.size()/(((double) checker.time)/1000.0);    
                 System.out.println("\tTime: " + time + "sent./sec.");
                 showPerformance(checker);
             } 
@@ -134,7 +167,7 @@ final public class Mode {
     }
     
     private void test() throws IOException{
-        Parser parser = new Parser(n_cases);
+        Parser parser = new HillClimbingParser(nCases);
         parser.perceptron = perceptron;
 
         if (rnd != 0) parser.rnd = new Random(rnd);
@@ -144,14 +177,14 @@ final public class Mode {
             
         for (int i=0; i<iteration; i++) {
             System.out.println(String.format("\nIteration %d: ", i+1));
-            AccuracyChecker checker = new AccuracyChecker(n_cases);
+            AccuracyChecker checker = new AccuracyChecker(nCases);
 
             String out_fn = outfile + "-" + i;
-            checker.testAndOutput(testsentence, parser, restart, out_fn,
+            checker.testAndOutput(testSent, parser, restart, out_fn,
                                   false, false);
             
  
-            double time = testsentence.size()/(((double) checker.time)/1000.0);    
+            double time = testSent.size()/(((double) checker.time)/1000.0);    
             System.out.println("\tTime: " + time + "sent./sec.");
             showPerformance(checker);
         }
@@ -173,7 +206,7 @@ final public class Mode {
     }
 
     final public void showPerformance(AccuracyChecker checker) {
-        for (int case_label=0; case_label<n_cases; case_label++)
+        for (int case_label=0; case_label<nCases; case_label++)
             setCasePerformance(checker, case_label);
         setAllPerformance(checker);
     }
@@ -231,7 +264,7 @@ final public class Mode {
         float correct_dep = 0.0f;
         float correct_zero = 0.0f;
         
-        for (int case_label=0; case_label<n_cases; case_label++) {
+        for (int case_label=0; case_label<nCases; case_label++) {
             r_total += checker.r_dep[case_label] + checker.r_zero[case_label];
             r_dep += checker.r_dep[case_label];
             r_zero += checker.r_zero[case_label];

@@ -11,59 +11,104 @@ import java.util.ArrayList;
  */
 
 final public class Trainer {
-    public ArrayList<Sentence> sentencelist;
-    public Parser parser;
-    public Perceptron perceptron;
-    public int n_cases;
-    public ArrayList[] o_feature;
+    final public ArrayList<Sentence> sents;
+    final public Parser parser;
+    final public int nCases;
+    final public ArrayList[] oracleFeature;
 
-    Trainer(final ArrayList<Sentence> sentencelist, final int n_cases,
-             final int max_sent_len, final int weight_len) {
-        this.sentencelist = sentencelist;
-        this.n_cases = n_cases;
-        this.parser = new Parser(n_cases, sentencelist.size(),
-                                 max_sent_len, weight_len);
-        this.o_feature = new ArrayList[sentencelist.size()];
+    Trainer(String parser, ArrayList<Sentence> corpus, int nCases, int maxSentLen, int weightSize) {
+        this.sents = corpus;
+        this.nCases = nCases;
+        if ("baseline".equals(parser))
+            this.parser = new BaselineParser(nCases, corpus.size(), maxSentLen, weightSize);
+        else
+            this.parser = new HillClimbingParser(nCases, corpus.size(), maxSentLen, weightSize);
+        this.oracleFeature = new ArrayList[corpus.size()];
     }
     
-    final public void train(int restart) {
+    final public void train() {
         int counter = 0;
-        this.parser.perceptron.sent_id = 0;
+        int crr = 0;
+        parser.perceptron.sentIndex = 0;
                 
-        for(int i=0; i<this.sentencelist.size(); ++i){
-            Sentence sentence = this.sentencelist.get(i);
+        for(int i=0; i<sents.size(); ++i){
+            Sentence sent = sents.get(i);
 
-            if (!sentence.hasPrds) {
+            if (!sent.hasPrds) {
                 if (counter%1000 == 0 && counter != 0)
                     System.out.print(String.format("%d ", counter));
-                this.parser.perceptron.sent_id++;
+                parser.perceptron.sentIndex++;
                 counter += 1;
                 continue;
             }
             
-            int args_length = sentence.argIndices.size();
-            int prds_length = sentence.prdIndices.size();
-            this.parser.perceptron.feature.cache =
-                    new ArrayList[n_cases][n_cases][prds_length]
-                                 [args_length][prds_length][args_length];
-            
-            ArrayList o_feature = this.o_feature[i];
-            if (o_feature == null) {
-                o_feature = parser.extractFeature(sentence, sentence.oracleGraph);
-                this.o_feature[i] = o_feature;
-            }
-            
-            final int[][] graph;
-            graph = parser.decode(sentence, restart);
-
-            final ArrayList feature = this.parser.extractFeature(sentence, graph);            
-            this.parser.perceptron.updateWeights(o_feature, feature);
-            this.parser.perceptron.checkAccuracy(sentence.oracleGraph, graph);
+            ArrayList oraclePhi = parser.getFeature(sent, sent.oracleGraph);
+            int[][] systemGraph = parser.decode(sent);
+            parser.perceptron.updateWeights(oraclePhi, parser.bestPhi);
+            parser.perceptron.checkAccuracy(sent.oracleGraph, systemGraph);
+            crr += getCorrects(sent.oracleGraph, systemGraph);
 
             if (counter%1000 == 0 && counter != 0)
                 System.out.print(String.format("%d ", counter));
 
-            this.parser.perceptron.sent_id++;
+            parser.perceptron.sentIndex++;
+            counter += 1;
+        }
+        System.out.print(String.format("%d ", crr));
+
+    }
+    
+    final public int getCorrects(int[][] oracleGraph, int[][] systemGraph) {
+        int crr = 0;
+        for (int i=0; i<oracleGraph.length; ++i) {
+            int[] oracleGraph_i = oracleGraph[i];
+            int[] systemGraph_i = systemGraph[i];
+            for (int j=0; j<oracleGraph_i.length; ++j) {
+                int oracleArgIndex = oracleGraph_i[j];
+                int systemArgIndex = systemGraph_i[j];
+                if (oracleArgIndex == systemArgIndex) crr++;
+            }
+        }
+        return crr;
+    }
+
+    final public void train(int restart) {
+        int counter = 0;
+        this.parser.perceptron.sentIndex = 0;
+                
+        for(int i=0; i<sents.size(); ++i){
+            Sentence sent = sents.get(i);
+
+            if (!sent.hasPrds) {
+                if (counter%1000 == 0 && counter != 0)
+                    System.out.print(String.format("%d ", counter));
+                this.parser.perceptron.sentIndex++;
+                counter += 1;
+                continue;
+            }
+            
+            int nArgs = sent.argIndices.size();
+            int nPrds = sent.prdIndices.size();
+            this.parser.perceptron.feature.cache =
+                    new ArrayList[nCases][nCases][nPrds][nArgs][nPrds][nArgs];
+            
+            ArrayList o_feature = oracleFeature[i];
+            if (o_feature == null) {
+                o_feature = parser.getFeature(sent, sent.oracleGraph);
+                oracleFeature[i] = o_feature;
+            }
+            
+            final int[][] graph;
+            graph = parser.decode(sent, restart);
+
+            final ArrayList feature = parser.getFeature(sent, graph);            
+            this.parser.perceptron.updateWeights(o_feature, feature);
+            this.parser.perceptron.checkAccuracy(sent.oracleGraph, graph);
+
+            if (counter%1000 == 0 && counter != 0)
+                System.out.print(String.format("%d ", counter));
+
+            this.parser.perceptron.sentIndex++;
             counter += 1;
         }
     }
