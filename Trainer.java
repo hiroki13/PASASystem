@@ -54,7 +54,7 @@ final public class Trainer {
             parser.perceptron.sentIndex++;
             counter += 1;
         }
-        System.out.print(String.format("%d ", crr));
+        System.out.print(String.format("\n\tTrain Crr: %d ", crr));
 
     }
     

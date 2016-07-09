@@ -31,8 +31,8 @@ final public class ParameterChecker {
         mode.o = optionparser.isExsist("o");
         mode.ni = optionparser.isExsist("ni");
         
-        mode.iteration = optionparser.getInt("iter",10);
-        mode.restart = optionparser.getInt("restart", 10);
+        mode.iteration = optionparser.getInt("iter", 10);
+        mode.restart = optionparser.getInt("restart", 1);
         mode.rnd = optionparser.getInt("rnd", 0);
         mode.weightSize = optionparser.getInt("weight", 500000);
     }

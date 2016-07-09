@@ -56,6 +56,7 @@ final public class Mode {
             System.out.println(String.format("Train Sents: %d\tTest Sents: %d\tMax Sent Length: %d",                        
                 trainSent.size(), testSent.size(), maxSentLen));
             
+            showStatistics(trainSent);
             train();
         }
         else if ("train_word".equals(modeselect)) {
@@ -203,6 +204,7 @@ final public class Mode {
         for (int i=0; i<ttl_cases.length; ++i)
             System.out.println(String.format("\tCase:%d  Dep: %d  Zero: %d Inter: %d",
                     i, ttl_cases[i][0], ttl_cases[i][1], ttl_cases[i][2]));
+        System.out.println();
     }
 
     final public void showPerformance(AccuracyChecker checker) {
@@ -237,8 +239,9 @@ final public class Mode {
                         (recall_zero+precision_zero);
 
         
+        System.out.println(String.format("\n\tCase: %d", case_label));
         System.out.println(String.format
-            ("\n\tALL Precision %f Recall %f F1 %f CORRECT %d P_TOTAL %d R_TOTAL %d",
+            ("\tALL Precision %f Recall %f F1 %f CORRECT %d P_TOTAL %d R_TOTAL %d",
             precision, recall, f1, (int) checker.correct[case_label],
             (int) checker.p_total[case_label], (int) r_total));
         System.out.println(String.format

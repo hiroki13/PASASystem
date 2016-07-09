@@ -16,110 +16,69 @@ final public class Chunk implements Serializable{
     final int INDEX, DEP_HEAD_INDEX;
     final ArrayList<Word> words = new ArrayList();
 
-    int[] ga, o, ni, zero_ga, zero_o, zero_ni;
-    int[][] parsedCases, parsedZeroCases;  // (ga, o, ni)
+    int ga = -1, o = -1, ni = -1, zeroGa = -1, zeroO = -1, zeroNi = -1;
+    int[] parsedDepCases, parsedZeroCases;  // (ga, o, ni)
     
-    Word chead, cfunc;
-    ArrayList sahen_noun = new ArrayList<>();
-    boolean verb = false, sahen_verb = false;
-    String case_alter = "";
-    String compound_sahen_noun = "";
-    String compound_noun = "";
-    String compound_joshi = "";
+    Word chead, cfunc, prd;
+    ArrayList sahenNoun = new ArrayList();
+    boolean verb = false, sahenVerb = false;
+    String caseAlter = "", compoundSahenNoun = "", compoundNoun = "", compoundJoshi = "";
     String aux, reg_form;
 
-    boolean pred = false;        
-    
-    public Chunk(String[] input_info){
-        this.INDEX = Integer.parseInt(input_info[1]);
-        this.DEP_HEAD_INDEX = setPas(input_info[2]);
-
-        this.ga = setAddPas(input_info[3]);
-        this.o = setAddPas(input_info[4]);
-        this.ni = setAddPas(input_info[5]);
-
-        this.zero_ga = setAddPas(input_info[6]);
-        this.zero_o = setAddPas(input_info[7]);
-        this.zero_ni = setAddPas(input_info[8]);
-        
-        if ("PRED".equals(input_info[12])) this.pred = true;
-    }
+    boolean hasPrd = false;
     
     public Chunk(int index, int head) {
         this.INDEX = index;
         this.DEP_HEAD_INDEX = head;
     }
     
-    final public void setParams() {                        
+    final public void setParams(Sentence sent, int nCases) {                        
         setHead();                        
-        setSahenNoun();        
+        setSahenWord();        
         setCaseAlterSuffix();        
-        setCompounds();        
+        setCompoundWords();        
         setAux();        
-        setRegForm();        
-    }
-
-    final public void setParsedCase(int[] caseLabels) {
-        this.parsedCases = new int[caseLabels.length][];
-        this.parsedZeroCases = new int[caseLabels.length][];
-
-        for (int i=0; i<caseLabels.length; ++i) {
-            int case_label = caseLabels[i];
-            int[] caseDep;
-            int[] caseZero;
-
-            if (case_label == 0) {
-                caseDep = this.ga;
-                caseZero = this.zero_ga;
-            }
-            else if (case_label == 1) {
-                caseDep = this.o;
-                caseZero = this.zero_o;
-            }
-            else {
-                caseDep = this.ni;
-                caseZero = this.zero_ni;
-            }
-
-            this.parsedCases[i] = caseDep;
-            this.parsedZeroCases[i] = caseZero;
-        }
-    }
-
-    final public void setHead(){
-        for (int i=0; i<this.words.size(); ++i) {
-            Word token = (Word) this.words.get(i);
-
-            if ("動詞".equals(token.CPOS)) this.verb = true;
-            
-            if (!"特殊".equals(token.CPOS) && !"助詞".equals(token.CPOS)
-                && !"接尾辞".equals(token.CPOS) && !"助動詞".equals(token.CPOS)) {
-                this.chead = token;
-            }
-            else if (!"特殊".equals(token.CPOS)) {
-                this.cfunc = token;
-            }
-        }
-        
-        if (this.chead == null)
-            this.chead = setNoneHead();
+        setRegForm();
+        setPrds();
     }
     
-    private Word setNoneHead() {
-        final String none_token_info = "NONE\tNONE\t*\tNONE\tNONE\t*\t*\t_";
-        String[] split = none_token_info.split("\t");
-        Word token = new Word(-1, this, split);
-        return token;
+    private void setPrds() {
+        if (chead != null && chead.IS_PRD) {
+            prd = chead;
+            hasPrd = true;
+        }
+    }
+    
+    final public void setHead(){
+        for (int i=0; i<this.words.size(); ++i) {
+            Word word = this.words.get(i);
+
+            if ("動詞".equals(word.CPOS)) this.verb = true;
+            
+            if (!"特殊".equals(word.CPOS) && !"助詞".equals(word.CPOS)
+                && !"接尾辞".equals(word.CPOS) && !"助動詞".equals(word.CPOS))
+                this.chead = word;
+            else if (!"特殊".equals(word.CPOS))
+                this.cfunc = word;
+        }
+        
+        if (this.chead == null) this.chead = setNullHead();
+    }
+    
+    private Word setNullHead() {
+        String nullWordInfo = "NONE\tNONE\t*\tNONE\tNONE\t*\t*\t_";
+        String[] split = nullWordInfo.split("\t");
+        return new Word(-1, this, split);
     }
 
-    final public void setSahenNoun() {
+    final public void setSahenWord() {
         for (int i=0; i<this.words.size(); ++i) {
             Word token = (Word) this.words.get(i);
 
             if ("サ変名詞".equals(token.POS))
-                this.sahen_noun.add(token);
+                this.sahenNoun.add(token);
             if ("サ変動詞".equals(token.INF_TYPE))
-                this.sahen_verb = true;
+                this.sahenVerb = true;
         }
     }
 
@@ -137,28 +96,28 @@ final public class Chunk implements Serializable{
                 alter1 = "1";
             if (("できる".equals(token.R_FORM) || "できる".equals(token.FORM)
                 || "出来る".equals(token.R_FORM) || "出来る".equals(token.FORM)) &&
-                this.sahen_noun.size() > 0)
+                this.sahenNoun.size() > 0)
                 alter2 = "1";
             if (token.INF_FORM.startsWith("デアル列"))
                 alter3 = "1";
         }
 
-        this.case_alter = alter1+alter2+alter3;
+        this.caseAlter = alter1+alter2+alter3;
     }
     
-    final public void setCompounds() {
+    final public void setCompoundWords() {
         Word chead = this.chead;
         if (chead != null) {
-            if (this.sahen_verb) {
-                for(int j=0; j<this.sahen_noun.size(); ++j) {
-                    this.compound_sahen_noun += ((Word) this.sahen_noun.get(j)).FORM;
+            if (this.sahenVerb) {
+                for(int j=0; j<this.sahenNoun.size(); ++j) {
+                    this.compoundSahenNoun += ((Word) this.sahenNoun.get(j)).FORM;
                 }
             }
             
             int head = 100;
             for (int j=0; j<this.words.size(); ++j) {
                 String t = ((Word) this.words.get(j)).FORM;
-                this.compound_noun += t;
+                this.compoundNoun += t;
                 if (t.equals(chead.FORM)) {
                     head = j+1;
                     break;
@@ -166,7 +125,7 @@ final public class Chunk implements Serializable{
             }
             for (int j=head; j<this.words.size(); ++j) {
                 String t = ((Word) this.words.get(j)).FORM;
-                this.compound_joshi += t;
+                this.compoundJoshi += t;
             }
         }
     }
@@ -179,23 +138,9 @@ final public class Chunk implements Serializable{
     final public void setRegForm() {
         String rform = this.chead.R_FORM;
 
-        if (this.sahen_verb) this.reg_form = this.compound_sahen_noun;
+        if (this.sahenVerb) this.reg_form = this.compoundSahenNoun;
         else if (!"*".equals(rform)) this.reg_form = rform;
         else this.reg_form = this.chead.FORM;
     }
 
-    private int[] setAddPas(String pas) {
-        String[] tmp = pas.split("/");
-        int[] pas_info = new int[tmp.length];
-        for (int i=0; i<tmp.length; ++i) {
-            pas_info[i] = setPas(tmp[i]);
-        }
-        return pas_info;
-    }
-
-    private int setPas(String pas) {
-        if ("*".equals(pas)) return -1;
-        return Integer.parseInt(pas);
-    }
-        
 }

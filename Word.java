@@ -22,7 +22,6 @@ final public class Word implements Serializable{
     int ga = -1, o = -1, ni = -1;
     int zeroGa = -1, zeroO = -1, zeroNi = -1;
     int interGa = -1, interO = -1, interNi = -1;
-    int[][] parsedCases, parsedZeroCases;  // (ga, o, ni)
     
     public Word(int index, Chunk chunk, String[] info) {
         this.INDEX = index;
@@ -101,7 +100,7 @@ final public class Word implements Serializable{
     private int getArgWordIndex(ArrayList<Word> words, int argId) {
         for (int i=0; i<words.size(); ++i) {
             Word word = words.get(i);
-            if (word.ID == argId) return word.INDEX;
+            if (word.ID == argId) return i;
         }
         return 1000;
     }

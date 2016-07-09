@@ -22,101 +22,127 @@ final public class ChunkSentence extends Sentence {
     }
 
     @Override
-    final public void add(Chunk chunk){
-        chunks.add(chunk);
-    }
-    
-    @Override
-    final public int size(){
-        return chunks.size();
-    }
-    
-    @Override
-    final public boolean hasDepCicle() {                    
-        for (int i=0; i<size()-1; ++i) {
-            Chunk chunk = chunks.get(i);
-            if (chunk.INDEX == chunk.DEP_HEAD_INDEX)
-                return true;                
-        }
-        return false;
-    }
-    
-    @Override
-    final public void setElemParams() {
-        for (int i=0; i<size()-1; ++i)
-            chunks.get(i).setParams();
-    }
-    
-    @Override
-    final public void setParams(int[] caseLabels) {
+    final public void setParams() {
         setElemParams();
-        setParsedCases(caseLabels);
         setArgs();        
-        setPrds();        
-        setOracleGraph();        
-        setDepPaths();        
-        setTotalNumCaseArgs();        
+        setPrds();
+        setWordDeps();
+        setDepPaths();
+        setCaseArgIndex();
+        setParsedCases();
+        setOracleGraph();
+        setCaseStatistics();
     }
     
-    final public void setParsedCases(int[] caseLabels) {
-        for (int i=0; i<this.size()-1; ++i)
-            chunks.get(i).setParsedCase(caseLabels);
-    }
-    
-    final public void setArgs() {
-        for (int i=0; i<this.size(); ++i)
-            if (chunks.get(i).chead != null) argIndices.add(i);
-    }
-    
-    final public void setPrds() {
+    private void setParsedCases() {
         for (int i=0; i<chunks.size(); ++i) {
             Chunk chunk = chunks.get(i);
-            if (chunk.pred && chunk.chead != null) prdIndices.add(i);
+            chunk.parsedDepCases = new int[nCases];
+            chunk.parsedZeroCases = new int[nCases];
+            chunk.parsedDepCases[0] = chunk.ga;        
+            chunk.parsedZeroCases[0] = chunk.zeroGa;
+            chunk.parsedDepCases[1] = chunk.o;        
+            chunk.parsedZeroCases[1] = chunk.zeroO;
+            chunk.parsedDepCases[2] = chunk.ni;        
+            chunk.parsedZeroCases[2] = chunk.zeroNi;
         }
-        if (prdIndices.size() > 0) hasPrds = true;
     }
-    
-    final public void setOracleGraph() {
-        int nPrds = prdIndices.size();
-        oracleGraph = new int[nPrds][nCases];
 
-        for (int prd_i=0; prd_i<nPrds; ++prd_i) {
-            Chunk prd = chunks.get(prdIndices.get(prd_i));
-
-            if (prd.chead != null && prd.pred) {
-                for (int case_label=0; case_label<nCases; case_label++)
-                    setOracleCaseArg(prd_i, prd, case_label);
+    private void setCaseArgIndex() {
+        for (int i=0; i<words.size(); ++i) {
+            Word word = words.get(i);
+            if (word.IS_PRD) word.setCaseArgIndex(this);
+        }
+        
+        for (int i=0; i<chunks.size(); ++i) {
+            Chunk chunk = chunks.get(i);
+ 
+            if (chunk.hasPrd) {
+                Word prd = chunk.prd;
+                if (prd.ga > -1)
+                    chunk.ga = words.get(prd.ga).CHUNK.INDEX;        
+                if (prd.o > -1)
+                    chunk.o = words.get(prd.o).CHUNK.INDEX;        
+                if (prd.ni > -1)
+                    chunk.ni = words.get(prd.ni).CHUNK.INDEX;        
+                if (prd.zeroGa > -1)
+                    chunk.zeroGa = words.get(prd.zeroGa).CHUNK.INDEX;        
+                if (prd.zeroO > -1)
+                    chunk.zeroO = words.get(prd.zeroO).CHUNK.INDEX;        
+                if (prd.zeroNi > -1)
+                    chunk.zeroNi = words.get(prd.zeroNi).CHUNK.INDEX;        
             }
         }
     }
 
-    private void setOracleCaseArg(int prd_i, Chunk prd, int case_label) {
-        final int[] oracleDepArg = prd.parsedCases[case_label];
-        final int[] oracleZeroArg = prd.parsedZeroCases[case_label];
+    @Override
+    final public void setElemParams() {
+        for (int i=0; i<size()-1; ++i)
+            chunks.get(i).setParams(this, nCases);
+    }
+        
+    final public void setArgs() {
+        for (int i=0; i<this.size(); ++i)
+            argIndices.add(i);
+    }
+    
+    final public void setPrds() {
+        for (int i=0; i<chunks.size(); ++i)
+            if (chunks.get(i).hasPrd) prdIndices.add(i);
+        if (prdIndices.size() > 0) hasPrds = true;
+    }
+    
+    final public void setWordDeps() {
+        for (int i=0; i<chunks.size()-1; ++i) {
+            Chunk chunk = chunks.get(i);
+            ArrayList<Word> chunkWords = chunk.words;
+            int chunkHead = chunk.DEP_HEAD_INDEX;
 
-        boolean nullDep = hasNoOracle(prd_i, oracleDepArg, case_label);
-        boolean nullZero = hasNoOracle(prd_i, oracleZeroArg, case_label);
+            for (int j=0; j<chunkWords.size()-1; ++j) {
+                Word word = chunkWords.get(j);
+                word.depHeadIndex = word.INDEX + 1;
+            }
+            
+            Word headWord = chunkWords.get(chunkWords.size()-1);
+            if (chunkHead == -1)
+                headWord.depHeadIndex = -1;
+            else {
+                Chunk nextChunk = chunks.get(i+1);
+                Word nextHeadWord = nextChunk.words.get(nextChunk.words.size()-1);
+                headWord.depHeadIndex = nextHeadWord.INDEX;
+            }
+        }
+    }
+    
+    final public void setOracleGraph() {
+        int nPrds = prdIndices.size();
+        oracleGraph = new int[nPrds][];
 
-        if (nullDep && nullZero) {
-            int nullArgIndex = this.size()-1; // indicating the "NULL" node            
-            oracleGraph[prd_i][case_label] = argIndices.indexOf(nullArgIndex);
+        for (int prd_i=0; prd_i<nPrds; ++prd_i) {
+            Chunk prd = chunks.get(prdIndices.get(prd_i));                
+            oracleGraph[prd_i] = getOracleCaseArgs(prd);
         }
     }
 
-    private boolean hasNoOracle(int prd_i, int[] oracle_args, int case_label) {
-        for (int i=0; i<oracle_args.length; ++i) {        
-            int oracle_arg_id = oracle_args[i];
+    private int[] getOracleCaseArgs(Chunk prd) {
+        int[] graph = new int[nCases];
+        int[] oracleDepArgs = prd.parsedDepCases;
+        int[] oracleZeroArgs = prd.parsedZeroCases;
 
-            if (oracle_arg_id < 0) return true;          
-                    
-            Chunk arg = (Chunk) this.chunks.get(oracle_arg_id);
+        for (int caseLabel=0; caseLabel<nCases; ++caseLabel)        
+            graph[caseLabel] = argIndices.indexOf(argIndices.size()-1);                 
+
+        for (int caseLabel=0; caseLabel<nCases; ++caseLabel) {        
+            int oracleDepArgIndex = oracleDepArgs[caseLabel];
+            int oracleZeroArgIndex = oracleZeroArgs[caseLabel];
+
+            if (oracleDepArgIndex > -1 && chunks.get(oracleDepArgIndex).chead != null)
+                graph[caseLabel] = argIndices.indexOf(oracleDepArgIndex);            
             
-            if (arg.chead == null) continue;                                
-            this.oracleGraph[prd_i][case_label] = this.argIndices.indexOf(oracle_arg_id);            
-            break;
+            if (oracleZeroArgIndex > -1 && chunks.get(oracleZeroArgIndex).chead != null)
+                graph[caseLabel] = argIndices.indexOf(oracleZeroArgIndex);            
         }
-
-        return false;
+        return graph;
     }
         
     final public void setDepPaths() {
@@ -260,14 +286,14 @@ final public class ChunkSentence extends Sentence {
             if (chunk.chead != null) pos = chunk.chead.CPOS;
             else pos = "NULL";
 
-            joshi = chunk.compound_joshi;
+            joshi = chunk.compoundJoshi;
             
             verb = "NULL";
             sahen = "";
             if (chunk.chead != null) {
-                if (chunk.sahen_verb) {
-                    for (int j=0; j<chunk.sahen_noun.size(); ++j) {
-                        sahen += ((Word) chunk.sahen_noun.get(j)).FORM;
+                if (chunk.sahenVerb) {
+                    for (int j=0; j<chunk.sahenNoun.size(); ++j) {
+                        sahen += ((Word) chunk.sahenNoun.get(j)).FORM;
                     }
                 }
                 else if (chunk.verb) verb = chunk.chead.R_FORM;
@@ -296,31 +322,61 @@ final public class ChunkSentence extends Sentence {
         return new String[]{dep_pos_path, dep_verb_path, dep_r_path, dep_aux_path, dep_joshi_path};
     }
     
-    final public void setTotalNumCaseArgs() {
-        int[] parsed_cases;
-        int[] parsed_zero_cases;
-        int arg_dep;
-        int arg_zero;
-        
-        for (int prd_i=0; prd_i<prdIndices.size(); ++prd_i) {      
-            Chunk prd = (Chunk) chunks.get((int) prdIndices.get(prd_i));
-
-            for (int case_i=0; case_i<prd.parsedCases.length; case_i++) {
-                parsed_cases = prd.parsedCases[case_i];
-                parsed_zero_cases = prd.parsedZeroCases[case_i];
-                
-                for (int i=0; i<parsed_cases.length; i++) {
-                    arg_dep = parsed_cases[i];
-                    if (arg_dep > -1) nDepCaseArgs[case_i] += 1.0f;
+    @Override
+    final public void setCaseStatistics() {
+        int[][] cases = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        for (int i=0; i<chunks.size(); ++i) {
+            Chunk chunk = chunks.get(i);
+            if (chunk.hasPrd) {
+                if (chunk.ga > -1) {
+                    cases[0][0]++;
+                    nDepCaseArgs[0]++;
+                }
+                else if (chunk.zeroGa > -1) {
+                    cases[0][1]++;
+                    nZeroCaseArgs[0]++;
                 }
 
-                for (int i=0; i<parsed_zero_cases.length; i++) {
-                    arg_zero = parsed_zero_cases[i];
-                    if (arg_zero > -1) nZeroCaseArgs[case_i] += 1.0f;
+                if (chunk.o > -1) {
+                    cases[1][0]++;
+                    nDepCaseArgs[1]++;
+                }
+                else if (chunk.zeroO > -1) {
+                    cases[1][1]++;
+                    nZeroCaseArgs[1]++;
                 }
 
+                if (chunk.ni > -1) {
+                    cases[2][0]++;
+                    nDepCaseArgs[2]++;
+                }
+                else if (chunk.zeroNi > -1) {
+                    cases[2][1]++;
+                    nZeroCaseArgs[2]++;
+                }
             }
-        }        
+        }
+        caseStatistics = cases;
+    }
+
+    @Override
+    final public boolean hasDepCicle() {                    
+        for (int i=0; i<size()-1; ++i) {
+            Chunk chunk = chunks.get(i);
+            if (chunk.INDEX == chunk.DEP_HEAD_INDEX)
+                return true;                
+        }
+        return false;
     }
     
+    @Override
+    final public void add(Chunk chunk){
+        chunks.add(chunk);
+    }
+    
+    @Override
+    final public int size(){
+        return chunks.size();
+    }
+        
 }

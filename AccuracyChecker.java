@@ -89,9 +89,10 @@ public class AccuracyChecker {
         }
     }
     
-    private void eval(ArrayList<Chunk> chunks, ArrayList<Integer> argIndices, ArrayList<Integer> prdIndices,
-                      int[] oracleGraph, int[] systemGraph, int caseLabel) {
-        int[] zeroArg;
+    private void eval(ArrayList<Chunk> chunks, ArrayList<Integer> argIndices,
+                      ArrayList<Integer> prdIndices, int[] oracleGraph,
+                      int[] systemGraph, int caseLabel) {
+        int zeroArg;
         
         for (int prd_i=0; prd_i<systemGraph.length; ++prd_i) {
             int systemArgIndex = systemGraph[prd_i];
@@ -101,36 +102,32 @@ public class AccuracyChecker {
             Chunk arg = chunks.get(systemArgIndex);
             
             if (caseLabel == 0)
-                zeroArg = prd.zero_ga;
+                zeroArg = prd.zeroGa;
             else if (caseLabel == 1)
-                zeroArg = prd.zero_o;
+                zeroArg = prd.zeroO;
             else
-                zeroArg = prd.zero_ni;
+                zeroArg = prd.zeroNi;
             
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (arg.DEP_HEAD_INDEX != prd.INDEX && prd.DEP_HEAD_INDEX != arg.INDEX) {
+                if (arg.DEP_HEAD_INDEX != prd.INDEX && prd.DEP_HEAD_INDEX != arg.INDEX)
                     p_zero[caseLabel] += 1.0f;
-                }
 
                 if (oracleArgIndex == systemArgIndex) {
                     correct[caseLabel] += 1.0f;
                     
-                    for (int j=0; j<zeroArg.length; ++j) {
-                        if (systemArgIndex == zeroArg[j]) {
-                           correct_zero[caseLabel] += 1.0f;
-                           break;
-                        }
-                    }
+                    if (systemArgIndex == zeroArg)
+                        correct_zero[caseLabel] += 1.0f;
                 }
                 
             }
         }
     }
     
-    private void wordEval(ArrayList<Word> words, ArrayList<Integer> argIndices, ArrayList<Integer> prdIndices,
-                           int[] oracleGraph, int[] systemGraph, int caseLabel) {
+    private void wordEval(ArrayList<Word> words, ArrayList<Integer> argIndices,
+                           ArrayList<Integer> prdIndices, int[] oracleGraph,
+                           int[] systemGraph, int caseLabel) {
         int zeroArg;
         
         for (int prd_i=0; prd_i<systemGraph.length; ++prd_i) {
@@ -157,10 +154,8 @@ public class AccuracyChecker {
 
                 if (oracleArgIndex == systemArgIndex) {
                     correct[caseLabel] += 1.0f;
-                    if (systemArgIndex == zeroArg) {
+                    if (systemArgIndex == zeroArg)
                         correct_zero[caseLabel] += 1.0f;
-                        break;
-                    }
                 }
                 
             }
@@ -334,9 +329,9 @@ public class AccuracyChecker {
             int prd_i = 0;
             for (int j=0; j<sentence.size()-1; ++j) {
                 Chunk c = chunks.get(j);
-                int[] predicted_case = new int[nCases];
-                
-                if (c.pred) {
+
+                int[] predicted_case;                
+                if (c.hasPrd) {
                     predicted_case = graph[i][prd_i];
                     prd_i++;
                 }
@@ -351,12 +346,12 @@ public class AccuracyChecker {
                                 
                 String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
                                             c.INDEX, c.DEP_HEAD_INDEX,
-                                            Arrays.toString(c.ga),
-                                            Arrays.toString(c.o),
-                                            Arrays.toString(c.ni),
-                                            Arrays.toString(c.zero_ga),
-                                            Arrays.toString(c.zero_o),
-                                            Arrays.toString(c.zero_ni),
+                                            Integer.toString(c.ga),
+                                            Integer.toString(c.o),
+                                            Integer.toString(c.ni),
+                                            Integer.toString(c.zeroGa),
+                                            Integer.toString(c.zeroO),
+                                            Integer.toString(c.zeroNi),
                                             Arrays.toString(predicted_case));
                 pw.println(text);           
                 

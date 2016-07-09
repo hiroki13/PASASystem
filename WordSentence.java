@@ -20,53 +20,11 @@ final public class WordSentence extends Sentence {
     }
 
     @Override
-    final public void add(Word word) {
-        words.add(word);
-    }
-    
-    @Override
-    final public int size() {
-        return words.size();
-    }
-    
-    @Override
-    final public void setCaseStatistics() {
-        int[][] cases = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-        for (int i=0; i<words.size(); ++i) {
-            Word word = words.get(i);
-            if (word.IS_PRD) {
-                if (word.ga > -1) cases[0][0]++;
-                else if (word.zeroGa > -1) cases[0][1]++;
-                else if (word.interGa > -1) cases[0][2]++;
-
-                if (word.o > -1) cases[1][0]++;
-                else if (word.zeroO > -1) cases[1][1]++;
-                else if (word.interO > -1) cases[1][2]++;
-
-                if (word.ni > -1) cases[2][0]++;
-                else if (word.zeroNi > -1) cases[2][1]++;
-                else if (word.interNi > -1) cases[2][2]++;
-            }
-        }
-        caseStatistics = cases;
-    }
-    
-    @Override
-    final public boolean hasDepCicle() {                    
-        for (int i=0; i<words.size(); ++i) {
-            Word word = words.get(i);
-            if (word.depHeadIndex == word.INDEX)
-                return true;
-        }
-        return false;
-    }
-
-    @Override
     final public void setParams() {
-        setWordDeps();
-        setDepPaths();
         setPrds();
         setArgs();
+        setWordDeps();
+        setDepPaths();
         setCaseArgIndex();
         setOracleGraph();
         setCaseStatistics();
@@ -118,32 +76,33 @@ final public class WordSentence extends Sentence {
 
         for (int prd_i=0; prd_i<nPrds; ++prd_i) {
             Word prd = words.get(prdIndices.get(prd_i));
-            setOracleCaseArg(prd_i, prd);
+            setOracleCaseArgs(prd_i, prd);
         }
     }
 
-    private void setOracleCaseArg(int prd_i, Word prd) {
-        // The last arg is the "NULL" node
+    private void setOracleCaseArgs(int prd_i, Word prd) {
+        int nullArgIndex = argIndices.size() - 1;
+
         if (prd.ga > -1)
             oracleGraph[prd_i][0] = prd.ga;
         else if (prd.zeroGa > -1)
             oracleGraph[prd_i][0] = prd.zeroGa;
         else
-            oracleGraph[prd_i][0] = argIndices.size() - 1;
+            oracleGraph[prd_i][0] = nullArgIndex;
 
         if (prd.o > -1)
             oracleGraph[prd_i][1] = prd.o;
         else if (prd.zeroO > -1)
             oracleGraph[prd_i][1] = prd.zeroO;
         else
-            oracleGraph[prd_i][1] = argIndices.size() - 1;
+            oracleGraph[prd_i][1] = nullArgIndex;
         
         if (prd.ni > -1)
             oracleGraph[prd_i][2] = prd.ni;
         else if (prd.zeroNi > -1)
             oracleGraph[prd_i][2] = prd.zeroNi;
         else
-            oracleGraph[prd_i][2] = argIndices.size() - 1;
+            oracleGraph[prd_i][2] = nullArgIndex;
     }
 
     final public void setDepPaths() {
@@ -268,6 +227,66 @@ final public class WordSentence extends Sentence {
         }
         
         return new String[]{depPosPath, depAuxPath};
+    }
+
+    @Override
+    final public void setCaseStatistics() {
+        int[][] cases = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        for (int i=0; i<words.size(); ++i) {
+            Word word = words.get(i);
+            if (word.IS_PRD) {
+                if (word.ga > -1) {
+                    cases[0][0]++;
+                    nDepCaseArgs[0]++;
+                }
+                else if (word.zeroGa > -1) {
+                    cases[0][1]++;
+                    nZeroCaseArgs[0]++;
+                }
+                else if (word.interGa > -1) cases[0][2]++;
+
+                if (word.o > -1) {
+                    cases[1][0]++;
+                    nDepCaseArgs[1]++;
+                }
+                else if (word.zeroO > -1) {
+                    cases[1][1]++;
+                    nZeroCaseArgs[1]++;
+                }
+                else if (word.interO > -1) cases[1][2]++;
+
+                if (word.ni > -1) {
+                    cases[2][0]++;
+                    nDepCaseArgs[2]++;
+                }
+                else if (word.zeroNi > -1) {
+                    cases[2][1]++;
+                    nZeroCaseArgs[2]++;
+                }
+                else if (word.interNi > -1) cases[2][2]++;
+            }
+        }
+        caseStatistics = cases;
+    }
+    
+    @Override
+    final public boolean hasDepCicle() {                    
+        for (int i=0; i<words.size(); ++i) {
+            Word word = words.get(i);
+            if (word.depHeadIndex == word.INDEX)
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    final public void add(Word word) {
+        words.add(word);
+    }
+    
+    @Override
+    final public int size() {
+        return words.size();
     }
     
 }

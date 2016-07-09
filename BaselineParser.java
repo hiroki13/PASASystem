@@ -42,10 +42,8 @@ public class BaselineParser extends Parser{
                 float bestScore = -10000000.0f;
                 ArrayList tmpBestPhi = null;
 
-                for (int arg_i=0; arg_i<nArgs; ++arg_i) {
-                    int argIndex = sent.words.get(arg_i).INDEX;            
-//                    ArrayList phi = getFeature(sent, prdIndex, argIndex, caseLabel);
-                    ArrayList phi = getFeature(sent, prdIndex, arg_i, caseLabel);
+                for (int argIndex=0; argIndex<nArgs; ++argIndex) {
+                    ArrayList phi = getFeature(sent, prdIndex, argIndex, caseLabel);
                     float score = getScore(phi);
 
                     if (score > bestScore) {
@@ -71,7 +69,6 @@ public class BaselineParser extends Parser{
     final public ArrayList getFeature(Sentence sent, int[][] graph){
         final ArrayList phi = new ArrayList();
         
-        final ArrayList<Integer> argIndices = sent.argIndices;
         final ArrayList<Integer> prdIndices = sent.prdIndices;
         final ArrayList[][][] cache = perceptron.cacheFeats[sent.index];
 
@@ -81,12 +78,12 @@ public class BaselineParser extends Parser{
             
             for (int prd_i=0; prd_i<graph.length; ++prd_i) {
                 int prdIndex = prdIndices.get(prd_i);            
-                int argIndex = argIndices.get(graph[prd_i][caseLabel]);
+                int argIndex = graph[prd_i][caseLabel];
 
                 if (caseCache[prdIndex][argIndex] != null)
                     phi.addAll(caseCache[prdIndex][argIndex]);
                 else
-                    phi.addAll(getFeature(sent, argIndex, prdIndex, caseLabel));
+                    phi.addAll(getFeature(sent, prdIndex, argIndex, caseLabel));
             }
         }
         
