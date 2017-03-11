@@ -123,17 +123,17 @@ public class Feature implements Serializable{
                 
                 Chunk arg1 = chunks.get(argIndex_i);
                 Chunk prd1 = chunks.get(prdIndex_i);                    
-                String aux1 = arg1.aux;
-                String prdRform1 = prd1.reg_form;
+                String aux1 = arg1.particle;
+                String prdRform1 = prd1.regform;
                 String argPath1 = sent.depPath[arg_i][prdIndex_i];
-                String compJoshi1 = prd1.compoundJoshi;                
-                String alt1 = prd1.caseAlter;            
+                String compJoshi1 = prd1.compoundFuncWord;                
+                String alt1 = prd1.caseAlterSuffix;            
                 
                 Chunk arg2 = chunks.get(argIndex_j);                
                 Chunk prd2 = chunks.get(prdIndex_j);
-                String prdRform2 = prd2.reg_form;                    
-                String compJoshi2 = prd2.compoundJoshi;                
-                String alt2 = prd2.caseAlter;
+                String prdRform2 = prd2.regform;                    
+                String compJoshi2 = prd2.compoundFuncWord;                
+                String alt2 = prd2.caseAlterSuffix;
                 String direct = direction(prdIndex_i, prdIndex_j);
                 String conj = caseLabel + direct;
                 
@@ -144,7 +144,7 @@ public class Feature implements Serializable{
                     String argPosit1 = posit[0];
                     String argPosit2 = posit[1];
                     String combPosit = argPosit1 + argPosit2;
-                    String aux2 = arg2.aux;
+                    String aux2 = arg2.particle;
                     String joshi = aux1 + aux2 + alt1 + alt2 + argPosit1 + argPosit2;
                     
                     // pair
@@ -293,17 +293,17 @@ public class Feature implements Serializable{
                     feature[k++] = "6" + i + chead.INF_FORM + caseLabel;
                 
                 if (i==0) {
-                    feature[k++] = "7" + f.aux + caseLabel;
+                    feature[k++] = "7" + f.particle + caseLabel;
                     
                     if (!"".equals(f.compoundNoun))
                         feature[k++] = "8" + f.compoundNoun + caseLabel;
 
-                    if (!"".equals(f.compoundJoshi))
-                        feature[k++] = "9" + f.compoundJoshi + caseLabel;
+                    if (!"".equals(f.compoundFuncWord))
+                        feature[k++] = "9" + f.compoundFuncWord + caseLabel;
                 }
 
                 if (i==1) {
-                    feature[k++] = "10" + f.caseAlter + caseLabel;
+                    feature[k++] = "10" + f.caseAlterSuffix + caseLabel;
 
                     if (!"".equals(f.compoundSahenNoun)) {
                         feature[k++] = "11" + f.compoundSahenNoun + caseLabel;
@@ -365,12 +365,12 @@ public class Feature implements Serializable{
                 if (!"".equals(phi2.compoundSahenNoun))
                     feature[phiIndex++] = "33" + chead1.FORM + phi2.compoundSahenNoun + caseLabel;
                 
-                if (!"".equals(phi1.compoundJoshi)) {
-                    feature[phiIndex++] = "34" + phi1.compoundJoshi + chead2.R_FORM + caseLabel;
-                    feature[phiIndex++] = "35" + phi1.compoundJoshi + phi2.compoundSahenNoun + caseLabel;
+                if (!"".equals(phi1.compoundFuncWord)) {
+                    feature[phiIndex++] = "34" + phi1.compoundFuncWord + chead2.R_FORM + caseLabel;
+                    feature[phiIndex++] = "35" + phi1.compoundFuncWord + phi2.compoundSahenNoun + caseLabel;
 
-                    feature[phiIndex++] = "36" + phi1.compoundJoshi + phi2.caseAlter + caseLabel;
-                    feature[phiIndex++] = "37" + phi1.compoundJoshi + phi2.compoundSahenNoun + phi2.caseAlter + caseLabel;
+                    feature[phiIndex++] = "36" + phi1.compoundFuncWord + phi2.caseAlterSuffix + caseLabel;
+                    feature[phiIndex++] = "37" + phi1.compoundFuncWord + phi2.compoundSahenNoun + phi2.caseAlterSuffix + caseLabel;
                 }
             }
             
@@ -385,7 +385,7 @@ public class Feature implements Serializable{
             feature[phiIndex++] = "42_" + pre_post + "_" + dist + "_" + caseLabel;
             
             // Dependency Path
-            String label = phi2.caseAlter + caseLabel;
+            String label = phi2.caseAlterSuffix + caseLabel;
 
             int argIndex;
             if (phi1.INDEX > -1) argIndex = phi1.INDEX;
@@ -406,8 +406,8 @@ public class Feature implements Serializable{
             feature[phiIndex++] = "46" + dpath1;
             feature[phiIndex++] = "47" + dpath2;
 
-            String p_form = phi2.reg_form;
-            String a_form = phi1.reg_form;
+            String p_form = phi2.regform;
+            String a_form = phi1.regform;
             
             feature[phiIndex++] = "51" + dpath + p_form;
             feature[phiIndex++] = "52" + dpath1 + p_form;

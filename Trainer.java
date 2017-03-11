@@ -4,25 +4,29 @@
  * and open the template in the editor.
  */
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  *
  * @author hiroki
  */
 
-final public class Trainer {
+public class Trainer {
+
     final public ArrayList<Sentence> sents;
     final public Parser parser;
-    final public int nCases;
+    final public int N_CASES;
     final public ArrayList[] oracleFeature;
 
-    Trainer(String parser, ArrayList<Sentence> corpus, int nCases, int maxSentLen, int weightSize) {
+    Trainer(String parser, ArrayList<Sentence> corpus, int nCases, int maxSentLen,
+             int weightSize, int rndSeed) {
         this.sents = corpus;
-        this.nCases = nCases;
+        this.N_CASES = nCases;
         if ("baseline".equals(parser))
-            this.parser = new BaselineParser(nCases, corpus.size(), maxSentLen, weightSize);
+            this.parser = new BaselineParser(nCases, corpus.size(), maxSentLen, weightSize, rndSeed);
         else
-            this.parser = new HillClimbingParser(nCases, corpus.size(), maxSentLen, weightSize);
+            this.parser = new HillClimbingParser(nCases, corpus.size(), maxSentLen, weightSize, rndSeed);
+
         this.oracleFeature = new ArrayList[corpus.size()];
     }
     
@@ -90,7 +94,7 @@ final public class Trainer {
             int nArgs = sent.argIndices.size();
             int nPrds = sent.prdIndices.size();
             this.parser.perceptron.feature.cache =
-                    new ArrayList[nCases][nCases][nPrds][nArgs][nPrds][nArgs];
+                    new ArrayList[N_CASES][N_CASES][nPrds][nArgs][nPrds][nArgs];
             
             ArrayList o_feature = oracleFeature[i];
             if (o_feature == null) {

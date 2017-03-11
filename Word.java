@@ -13,11 +13,10 @@ import java.util.ArrayList;
 
 final public class Word implements Serializable{
     final int INDEX, ID;
-    final public String FORM, YOMI, R_FORM, CPOS, POS, INF_TYPE, INF_FORM, PAS, AUX;
+    final public String FORM, YOMI, R_FORM, CPOS, POS, INF_TYPE, INF_FORM;
     final public String[] PAS_INFO;
     final public boolean IS_PRD;
     final public Chunk CHUNK;
-    int depHeadIndex;
 
     int ga = -1, o = -1, ni = -1;
     int zeroGa = -1, zeroO = -1, zeroNi = -1;
@@ -32,18 +31,17 @@ final public class Word implements Serializable{
         this.POS = info[4];
         this.INF_TYPE = info[5];
         this.INF_FORM = info[6];
-        this.PAS = info[7];
-        
-        this.PAS_INFO = this.PAS.split("/");
+        this.PAS_INFO = info[7].split("/");
+
+        this.ID = setId();
         this.IS_PRD = isPrd();
         this.CHUNK = chunk;
-        this.ID = setId();
-        this.AUX = "";
     }
     
     private boolean isPrd() {
         for (int i=0; i<PAS_INFO.length; ++i)
-            if ("type=\"pred\"".equals(PAS_INFO[i])) return true;
+            if ("type=\"pred\"".equals(PAS_INFO[i]))
+                return true;
         return false;
     }
     
@@ -93,14 +91,16 @@ final public class Word implements Serializable{
     }
     
     private int getCaseArgId(String id) { 
-        if (id.contains("exo")) return 1000;             
+        if (id.contains("exo"))
+            return 1000;             
         return Integer.parseInt(id);       
     }
     
-    private int getArgWordIndex(ArrayList<Word> words, int argId) {
-        for (int i=0; i<words.size(); ++i) {
-            Word word = words.get(i);
-            if (word.ID == argId) return i;
+    private int getArgWordIndex(ArrayList<Word> words, int argID) {
+        for (int index=0; index<words.size(); ++index) {
+            Word word = words.get(index);
+            if (word.ID == argID)
+                return index;
         }
         return 1000;
     }
@@ -108,7 +108,7 @@ final public class Word implements Serializable{
     private int getCaseDepType(ArrayList<Word> words, int caseArgWordIndex) {
         if (caseArgWordIndex == 1000) return 2;
         Word caseArg = words.get(caseArgWordIndex);
-        if (CHUNK.DEP_HEAD_INDEX == caseArg.CHUNK.INDEX || CHUNK.INDEX == caseArg.CHUNK.DEP_HEAD_INDEX)
+        if (CHUNK.HEAD_INDEX == caseArg.CHUNK.INDEX || CHUNK.INDEX == caseArg.CHUNK.HEAD_INDEX)
             return 0;
         return 1;
     }

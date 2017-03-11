@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -14,13 +15,21 @@ import java.util.ArrayList;
 
 public class BaselineParser extends Parser{
 
-    public BaselineParser(int nCases, int nSents, int maxSentLen, int weightSize) {
+    public BaselineParser(int nCases, int nSents, int maxSentLen, int weightSize, int rndSeed) {
         this.nCases = nCases;
+        if (rndSeed != 0)
+            this.rnd = new Random(rndSeed);
+        else
+            this.rnd = new Random();        
         this.perceptron = new Perceptron(nCases, nSents, maxSentLen, weightSize);
     }
 
-    public BaselineParser(int nCases) {
+    public BaselineParser(int nCases, int rndSeed) {
         this.nCases = nCases;
+        if (rndSeed != 0)
+            this.rnd = new Random(rndSeed);
+        else
+            this.rnd = new Random();        
         this.perceptron = new Perceptron();
     }
 

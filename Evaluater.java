@@ -20,7 +20,7 @@ import java.util.List;
  * @author hiroki
  */
 
-public class AccuracyChecker {
+public class Evaluater {
     public float[] correct;
     public float[] correct_zero;
 
@@ -35,7 +35,7 @@ public class AccuracyChecker {
     
     public long time;
     
-    public AccuracyChecker(int c_length){
+    public Evaluater(int c_length){
         nCases = c_length;
         this.correct = new float[nCases];
         this.correct_zero = new float[nCases];
@@ -111,7 +111,7 @@ public class AccuracyChecker {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (arg.DEP_HEAD_INDEX != prd.INDEX && prd.DEP_HEAD_INDEX != arg.INDEX)
+                if (arg.HEAD_INDEX != prd.INDEX && prd.HEAD_INDEX != arg.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -149,7 +149,7 @@ public class AccuracyChecker {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (chunk_a.DEP_HEAD_INDEX != chunk_p.INDEX && chunk_p.DEP_HEAD_INDEX != chunk_a.INDEX)
+                if (chunk_a.HEAD_INDEX != chunk_p.INDEX && chunk_p.HEAD_INDEX != chunk_a.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -345,7 +345,7 @@ public class AccuracyChecker {
                 }
                                 
                 String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
-                                            c.INDEX, c.DEP_HEAD_INDEX,
+                                            c.INDEX, c.HEAD_INDEX,
                                             Integer.toString(c.ga),
                                             Integer.toString(c.o),
                                             Integer.toString(c.ni),

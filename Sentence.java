@@ -17,10 +17,11 @@ public class Sentence implements Serializable{
 
     public ArrayList<Word> words = new ArrayList();
     public ArrayList<Chunk> chunks = new ArrayList();
+    public ArrayList<Chunk> prds = new ArrayList();
 
     // argIndces contains only the index of the chunk that has a head word
-    public ArrayList<Integer> argIndices = new ArrayList<>();
-    public ArrayList<Integer> prdIndices = new ArrayList<>();
+    public ArrayList<Integer> argIndices = new ArrayList();
+    public ArrayList<Integer> prdIndices = new ArrayList();
     
     // oracleGraph contains the arg_indices: 1D: nPrds, 2D: nCases
     public int[][] oracleGraph;
@@ -48,6 +49,14 @@ public class Sentence implements Serializable{
     public void add(Word token) {}
 
     public void add(Chunk chunk) {}
+
+    final public Chunk getChunk(int index) {
+        return chunks.get(index);
+    }
+
+    final public Word getWord(int index) {
+        return words.get(index);
+    }
 
     public boolean hasDepCicle() {return false;}
     

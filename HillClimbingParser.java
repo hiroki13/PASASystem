@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -14,13 +15,21 @@ import java.util.ArrayList;
 
 public class HillClimbingParser extends Parser {
 
-    public HillClimbingParser(int nCases, int nSents, int maxSentLen, int weightSize) {
+    public HillClimbingParser(int nCases, int nSents, int maxSentLen, int weightSize, int rndSeed) {
         this.nCases = nCases;
+        if (rndSeed != 0)
+            this.rnd = new Random(rndSeed);
+        else
+            this.rnd = new Random();        
         this.perceptron = new Perceptron(nCases, nSents, maxSentLen, weightSize);
     }
 
-    public HillClimbingParser(int nCases) {
+    public HillClimbingParser(int nCases, int rndSeed) {
         this.nCases = nCases;
+        if (rndSeed != 0)
+            this.rnd = new Random(rndSeed);
+        else
+            this.rnd = new Random();        
         this.perceptron = new Perceptron();
     }
     
@@ -197,8 +206,7 @@ public class HillClimbingParser extends Parser {
                     feature.addAll(tmp_cache[prd_id][arg_i]);
                 }
                 else {
-                    first_ord_feature =
-                            extractFeature(sentence, arg_i, prd_id, case_label);
+                    first_ord_feature = extractFeature(sentence, arg_i, prd_id, case_label);
                     tmp_cache[prd_id][arg_i] = first_ord_feature;
                     feature.addAll(first_ord_feature);
                 }            

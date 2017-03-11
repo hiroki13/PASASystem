@@ -26,7 +26,6 @@ final public class ChunkSentence extends Sentence {
         setElemParams();
         setArgs();        
         setPrds();
-        setWordDeps();
         setDepPaths();
         setCaseArgIndex();
         setParsedCases();
@@ -34,20 +33,25 @@ final public class ChunkSentence extends Sentence {
         setCaseStatistics();
     }
     
-    private void setParsedCases() {
-        for (int i=0; i<chunks.size(); ++i) {
-            Chunk chunk = chunks.get(i);
-            chunk.parsedDepCases = new int[nCases];
-            chunk.parsedZeroCases = new int[nCases];
-            chunk.parsedDepCases[0] = chunk.ga;        
-            chunk.parsedZeroCases[0] = chunk.zeroGa;
-            chunk.parsedDepCases[1] = chunk.o;        
-            chunk.parsedZeroCases[1] = chunk.zeroO;
-            chunk.parsedDepCases[2] = chunk.ni;        
-            chunk.parsedZeroCases[2] = chunk.zeroNi;
-        }
+    @Override
+    final public void setElemParams() {
+        for (int i=0; i<size()-1; ++i)
+            chunks.get(i).setParams();
     }
-
+        
+    final public void setArgs() {
+        for (int i=0; i<this.size(); ++i)
+            argIndices.add(i);
+    }
+    
+    final public void setPrds() {
+        for (int i=0; i<chunks.size(); ++i)
+            if (chunks.get(i).hasPrd)
+                prdIndices.add(i);
+        if (prdIndices.size() > 0)
+            hasPrds = true;
+    }
+    
     private void setCaseArgIndex() {
         for (int i=0; i<words.size(); ++i) {
             Word word = words.get(i);
@@ -75,45 +79,20 @@ final public class ChunkSentence extends Sentence {
         }
     }
 
-    @Override
-    final public void setElemParams() {
-        for (int i=0; i<size()-1; ++i)
-            chunks.get(i).setParams(this, nCases);
-    }
-        
-    final public void setArgs() {
-        for (int i=0; i<this.size(); ++i)
-            argIndices.add(i);
-    }
-    
-    final public void setPrds() {
-        for (int i=0; i<chunks.size(); ++i)
-            if (chunks.get(i).hasPrd) prdIndices.add(i);
-        if (prdIndices.size() > 0) hasPrds = true;
-    }
-    
-    final public void setWordDeps() {
-        for (int i=0; i<chunks.size()-1; ++i) {
+    private void setParsedCases() {
+        for (int i=0; i<chunks.size(); ++i) {
             Chunk chunk = chunks.get(i);
-            ArrayList<Word> chunkWords = chunk.words;
-            int chunkHead = chunk.DEP_HEAD_INDEX;
-
-            for (int j=0; j<chunkWords.size()-1; ++j) {
-                Word word = chunkWords.get(j);
-                word.depHeadIndex = word.INDEX + 1;
-            }
-            
-            Word headWord = chunkWords.get(chunkWords.size()-1);
-            if (chunkHead == -1)
-                headWord.depHeadIndex = -1;
-            else {
-                Chunk nextChunk = chunks.get(i+1);
-                Word nextHeadWord = nextChunk.words.get(nextChunk.words.size()-1);
-                headWord.depHeadIndex = nextHeadWord.INDEX;
-            }
+            chunk.parsedDepCases = new int[nCases];
+            chunk.parsedZeroCases = new int[nCases];
+            chunk.parsedDepCases[0] = chunk.ga;        
+            chunk.parsedZeroCases[0] = chunk.zeroGa;
+            chunk.parsedDepCases[1] = chunk.o;        
+            chunk.parsedZeroCases[1] = chunk.zeroO;
+            chunk.parsedDepCases[2] = chunk.ni;        
+            chunk.parsedZeroCases[2] = chunk.zeroNi;
         }
     }
-    
+
     final public void setOracleGraph() {
         int nPrds = prdIndices.size();
         oracleGraph = new int[nPrds][];
@@ -215,7 +194,7 @@ final public class ChunkSentence extends Sentence {
         }
         Chunk chunk = (Chunk) chunks.get(chunk_id);
         path.add(chunk.INDEX);
-        int head = chunk.DEP_HEAD_INDEX;
+        int head = chunk.HEAD_INDEX;
         if (head == -1) return path;
         return searchRootPath(head, path);
     }
@@ -286,24 +265,24 @@ final public class ChunkSentence extends Sentence {
             if (chunk.chead != null) pos = chunk.chead.CPOS;
             else pos = "NULL";
 
-            joshi = chunk.compoundJoshi;
+            joshi = chunk.compoundFuncWord;
             
             verb = "NULL";
             sahen = "";
             if (chunk.chead != null) {
-                if (chunk.sahenVerb) {
+                if (chunk.isSahenVerb) {
                     for (int j=0; j<chunk.sahenNoun.size(); ++j) {
                         sahen += ((Word) chunk.sahenNoun.get(j)).FORM;
                     }
                 }
-                else if (chunk.verb) verb = chunk.chead.R_FORM;
+                else if (chunk.isVerb) verb = chunk.chead.R_FORM;
                 else sahen = "NULL";
             }
             else sahen = "NULL";
             
             regular = "NULL";
             if (chunk.chead != null) {
-                if (chunk.verb) regular = chunk.chead.R_FORM;
+                if (chunk.isVerb) regular = chunk.chead.R_FORM;
                 else regular = chunk.chead.FORM;
             }
                                                
@@ -313,7 +292,7 @@ final public class ChunkSentence extends Sentence {
             dep_pos_path += direct + pos;
             dep_verb_path += direct + sahen + verb + joshi;
             dep_r_path += direct + regular + joshi;
-            dep_aux_path += direct + chunk.aux;
+            dep_aux_path += direct + chunk.particle;
             dep_joshi_path += direct + joshi;
 
             node = tmp_node;
@@ -363,19 +342,24 @@ final public class ChunkSentence extends Sentence {
     final public boolean hasDepCicle() {                    
         for (int i=0; i<size()-1; ++i) {
             Chunk chunk = chunks.get(i);
-            if (chunk.INDEX == chunk.DEP_HEAD_INDEX)
+            if (chunk.INDEX == chunk.HEAD_INDEX)
                 return true;                
         }
         return false;
     }
     
     @Override
-    final public void add(Chunk chunk){
+    final public void add(Chunk chunk) {
         chunks.add(chunk);
     }
     
     @Override
-    final public int size(){
+    final public void add(Word word) {
+        chunks.get(size()-1).words.add(word);
+    }
+    
+    @Override
+    final public int size() {
         return chunks.size();
     }
         

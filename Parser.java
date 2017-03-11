@@ -23,6 +23,8 @@ public class Parser {
     public Parser() {}
 
     public Parser(int nCases) {}
+    
+    public Parser(int nCases, int rndSeed) {}
 
     public int[][] decode(Sentence sentence) {
         return new int[][]{};
