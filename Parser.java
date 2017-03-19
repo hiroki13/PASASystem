@@ -5,7 +5,6 @@
  */
 
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  *
@@ -13,11 +12,12 @@ import java.util.Random;
  */
 
 public class Parser {
+
     public Perceptron perceptron;
+    public FeatureExtractor featExtractor;
     public boolean hasCache = false;
     public ArrayList[][][] tmpCache;
     public ArrayList<Integer> bestPhi;
-    public Random rnd;
     public int nCases;
 
     public Parser() {}
@@ -26,20 +26,49 @@ public class Parser {
     
     public Parser(int nCases, int rndSeed) {}
 
-    public int[][] decode(Sentence sentence) {
+    public void train(Sample sample) {
+        int[] oracleFeatIDs = getOracleGraphFeatIDs(sample);
+        int[] systemFeatIDs = extractBestGraphFeatIDs(sample);        
+        perceptron.updateWeights(oracleFeatIDs, systemFeatIDs);
+    }
+    
+    private int[] getOracleGraphFeatIDs(Sample sample) {
+        return sample.oracleFeatIDs;
+    }
+
+    private int[] extractBestGraphFeatIDs(Sample sample) {
+        Graph graph = decode(sample);
+        graph.setBestGraph();
+        return graph.featIDs;
+    }
+
+    public int[][] decode(Sentence sent, int[][] oracleGraph) {
         return new int[][]{};
     }
 
-    public int[][] decode(Sentence sentence, int restart) {
+    public int[][] decode(Sentence sent) {
         return new int[][]{};
     }
-
-    public int[][] decode(Sentence sent, int restart, boolean test) {
-        return new int[][]{};
+    
+    public Graph decode(Sample sample) {
+        return null;
     }
 
-    public ArrayList getFeature(Sentence sentence, int[][] oracleGraph){
+    public ArrayList getFeature(Sentence sent, int[][] oracleGraph){
         return new ArrayList();
     }
+
+    final public int[] extractUnlabeledFeatIDs(Sample sample, Chunk prd, Chunk arg) {
+        return featExtractor.extractUnlabeledFeatIDs(sample, prd, arg);
+    }
+
+    final public int[] extractLabeledFeatIDs(int[] unlabeledFeatIDs, int caseLabel) {
+        return featExtractor.extractLabeledFeatIDs(unlabeledFeatIDs, caseLabel);
+    }
+
+    final public float calcScore(int[] featIDs) {
+        return perceptron.calcScore(featIDs);
+    }
+        
 
 }

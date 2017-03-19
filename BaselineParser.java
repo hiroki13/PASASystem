@@ -1,6 +1,4 @@
-
 import java.util.ArrayList;
-import java.util.Random;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -15,22 +13,41 @@ import java.util.Random;
 
 public class BaselineParser extends Parser{
 
-    public BaselineParser(int nCases, int nSents, int maxSentLen, int weightSize, int rndSeed) {
+    public BaselineParser(int nCases) {
         this.nCases = nCases;
-        if (rndSeed != 0)
-            this.rnd = new Random(rndSeed);
-        else
-            this.rnd = new Random();        
-        this.perceptron = new Perceptron(nCases, nSents, maxSentLen, weightSize);
+        this.perceptron = new Perceptron();
+        this.featExtractor = new FeatureExtractor(nCases);
     }
 
-    public BaselineParser(int nCases, int rndSeed) {
+    public BaselineParser(int nCases, int weightSize) {
         this.nCases = nCases;
-        if (rndSeed != 0)
-            this.rnd = new Random(rndSeed);
-        else
-            this.rnd = new Random();        
-        this.perceptron = new Perceptron();
+        this.perceptron = new Perceptron(nCases, weightSize);
+        this.featExtractor = new FeatureExtractor(nCases);
+    }
+
+    @Override
+    final public Graph decode(Sample sample) {
+        int nPrds = sample.prds.length;
+        int nArgs = sample.args.length;
+        Graph graph = new Graph(nPrds, nArgs, nCases);
+
+        for (int prdIndex=0; prdIndex<nPrds; ++prdIndex) {
+            Chunk prd = sample.prds[prdIndex];
+
+            for (int argIndex=0; argIndex<nArgs; ++argIndex) {
+                Chunk arg = sample.args[argIndex];                
+                int[] unlabeledFeatIDs = extractUnlabeledFeatIDs(sample, prd, arg);
+
+                for (int caseLabel=0; caseLabel<nCases; caseLabel++) {
+                    int [] labeledFeatIDs = extractLabeledFeatIDs(unlabeledFeatIDs, caseLabel);
+                    float score = calcScore(labeledFeatIDs);                    
+                    graph.addFeatIDs(labeledFeatIDs, prdIndex, argIndex, caseLabel);
+                    graph.addScore(score, prdIndex, argIndex, caseLabel);
+                }
+            }
+        }
+                
+        return graph;
     }
 
     @Override

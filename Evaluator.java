@@ -20,7 +20,7 @@ import java.util.List;
  * @author hiroki
  */
 
-public class Evaluater {
+public class Evaluator {
     public float[] correct;
     public float[] correct_zero;
 
@@ -35,7 +35,7 @@ public class Evaluater {
     
     public long time;
     
-    public Evaluater(int c_length){
+    public Evaluator(int c_length){
         nCases = c_length;
         this.correct = new float[nCases];
         this.correct_zero = new float[nCases];

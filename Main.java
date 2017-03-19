@@ -12,7 +12,7 @@
 public class Main {
     public static void main(String[] args) throws Exception {
         System.out.println("\n\tJapanese Predicate Argument Structure Analysis\n");
-        API api = new API(args);
+        App api = new App(args);
         api.main();
     }
 }

@@ -12,16 +12,105 @@ import java.util.ArrayList;
  * @author hiroki
  */
 
-public class Feature implements Serializable{
+public class FeatureExtractor implements Serializable{
     //[case][case][prd][prd][arg][arg]
-    public ArrayList[][][][][][] cache;
-    public ArrayList<Sentence> sents;
-    public int nCases;
-    public int weightSize;
+//    public ArrayList[][][][][][] cache;
+//    public ArrayList<Sentence> sents;
+    final public int nCases;
+    final public static int SIZE = (int) Math.pow(2, 23);
     
-    public Feature(int nCases) {
+    public FeatureExtractor(int nCases) {
         this.nCases = nCases;
     }
+    
+    final public int[] extractUnlabeledFeatIDs(Sample sample, Chunk prd, Chunk arg) {
+        Chunk argNext = Sample.getNextChunk(sample, arg);
+        Word ph = prd.chead;
+        Word ah = arg.chead;
+
+        int[] featIDs = {
+                Template.gen(Template.PRD_R_FORM.hash,    ph.R_FORM.hashCode()),
+                Template.gen(Template.PRD_CPOS.hash,    ph.CPOS.hashCode()),
+                Template.gen(Template.PRD_POS.hash,    ph.POS.hashCode()),
+                Template.gen(Template.ARG_R_FORM.hash,    ah.R_FORM.hashCode()),
+                Template.gen(Template.ARG_CPOS.hash,    ah.CPOS.hashCode()),
+                Template.gen(Template.ARG_POS.hash,    ah.POS.hashCode()),
+        };
+
+        return featIDs;
+    }
+
+    final public int[] extractLabeledFeatIDs(int[] unlabeledFeatIDs, int caseLabel) {
+        return null;
+    }
+
+    private enum Template {
+        // Unigrams
+        PRD_R_FORM("prform"),
+        PRD_CPOS("pcpos"),
+        PRD_POS("ppos"),
+        ARG_R_FORM("arform"),
+        ARG_CPOS("acpos"),
+        ARG_POS("apos");
+
+        private final String label;
+        private final int hash;
+
+        Template(String label) {
+            this.label = label;
+            this.hash = label.hashCode();
+        }
+
+        private static int gen(int... key) {
+            int hash = oneAtATimeHashAll(key);
+            return Math.abs(hash) % SIZE;
+        }
+
+        private static int genUnlabeled(int... key) {
+            return oneAtATimeHashUnlabeled(key);
+        }
+
+        private static int genLabeled(int featID, int caseLabel) {
+            int hash = oneAtATimeHashLabeled(featID, caseLabel);
+            return Math.abs(hash) % SIZE;
+        }
+    }
+
+    private static int oneAtATimeHashAll(int[] key) {
+        int hash = 0;
+        for (int v : key) {
+            hash += v;
+            hash += (hash << 10);
+            hash ^= (hash >> 6);
+        }
+        hash += (hash << 3);
+        hash ^= (hash >> 11);
+        hash += (hash << 15);
+        return hash;
+    }
+
+    private static int oneAtATimeHashUnlabeled(int[] key) {
+        int hash = 0;
+        for (int v : key) {
+            hash += v;
+            hash += (hash << 10);
+            hash ^= (hash >> 6);
+        }
+        return hash;
+    }
+
+    private static int oneAtATimeHashLabeled(int hash, int caseLabel) {
+        hash += caseLabel;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+        hash += (hash << 3);
+        hash ^= (hash >> 11);
+        hash += (hash << 15);
+        return hash;
+    }
+
+    
+    
     
     final public ArrayList getFeature(Sentence sent, int argIndex, int prdIndex, int caseLabel) {
         ArrayList<Integer> usedFeatures = new ArrayList();
@@ -140,7 +229,7 @@ public class Feature implements Serializable{
                 //Feature
                 if (argIndex_i != argIndex_j) {
                     // Diff-Arg
-                    String[] posit = Feature.this.position(argIndex_i, argIndex_j, prdIndex_i, prdIndex_j, nArgs);
+                    String[] posit = FeatureExtractor.this.position(argIndex_i, argIndex_j, prdIndex_i, prdIndex_j, nArgs);
                     String argPosit1 = posit[0];
                     String argPosit2 = posit[1];
                     String combPosit = argPosit1 + argPosit2;

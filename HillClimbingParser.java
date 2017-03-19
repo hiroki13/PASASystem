@@ -14,28 +14,70 @@ import java.util.Random;
  */
 
 public class HillClimbingParser extends Parser {
+    
+    final private int RESTART;
+    final private Random rnd;
 
-    public HillClimbingParser(int nCases, int nSents, int maxSentLen, int weightSize, int rndSeed) {
+    public HillClimbingParser(int nCases, int weightSize, int restart, int rndSeed) {
         this.nCases = nCases;
-        if (rndSeed != 0)
-            this.rnd = new Random(rndSeed);
-        else
-            this.rnd = new Random();        
-        this.perceptron = new Perceptron(nCases, nSents, maxSentLen, weightSize);
+        this.rnd = setRndSeed(rndSeed);
+        this.RESTART = restart;
+        this.perceptron = new Perceptron(nCases, weightSize);
     }
 
-    public HillClimbingParser(int nCases, int rndSeed) {
+    public HillClimbingParser(int nCases, int restart, int rndSeed) {
         this.nCases = nCases;
-        if (rndSeed != 0)
-            this.rnd = new Random(rndSeed);
-        else
-            this.rnd = new Random();        
+        this.rnd = setRndSeed(rndSeed); 
+        this.RESTART = restart;
         this.perceptron = new Perceptron();
     }
     
+    private Random setRndSeed(int rndSeed) {
+        if (rndSeed == 0)
+            return new Random();        
+        return new Random(rndSeed);
+    }
+        
+    public ArrayList[] extractOracleFeatIDs(ArrayList<Sentence> trainCorpus) {
+        ArrayList[] featIDs = new ArrayList[trainCorpus.size()];
+
+        for(int i=0; i<trainCorpus.size(); ++i) {
+            Sentence sent = trainCorpus.get(i);
+            featIDs[i] = getFeature(sent, sent.oracleGraph);
+        }
+            
+        return featIDs;
+    }
+    
+    public ArrayList[][][][][] extractAllPossibleFeatIDs(ArrayList<Sentence> trainCorpus) {
+        ArrayList[][][][][] featIDs = new ArrayList[trainCorpus.size()][][][][];
+
+        for(int i=0; i<trainCorpus.size(); ++i) {
+            Sentence sent = trainCorpus.get(i);
+            featIDs[i] = extractAllPossibleFeatIDs(sent);
+        }
+            
+        return featIDs;
+        
+    }
+    
+    private ArrayList[][][][] extractAllPossibleFeatIDs(Sentence sent) {
+        int n_prds = sent.prdIndices.size();
+        int n_args = sent.argIndices.size();
+        ArrayList[][][][] featIDs = new ArrayList[n_prds][n_prds][n_args][n_args];
+        return featIDs;
+    }
+    
+    private int[] extractOracleGraphFeatIDs(Sample sample) {
+        return sample.oracleFeatIDs;
+    }
+    
+    private int[] extractBestGraphFeatIDs(Sample sample) {
+        return;
+    }
+
     @Override
-    final public int[][] decode(Sentence sent, int restart) {
-        int[][] oracleGraph = sent.oracleGraph;
+    final public int[][] decode(Sentence sent, int[][] oracleGraph) {
         int nArgs = sent.argIndices.size();
         int nPrds = sent.prdIndices.size();
         ArrayList[][][] cache = perceptron.cacheFeats[sent.index];
@@ -44,7 +86,7 @@ public class HillClimbingParser extends Parser {
         int[][] bestGraph = new int[nPrds][nCases];
         int bestArgIndex = -1, bestCaseLabel = -1, bestPrd = -1;
 
-        for (int i=0; i<restart; ++i) {
+        for (int i=0; i<RESTART; ++i) {
             int[][] graph = setInitGraph(sent);
 
             while (true) {
@@ -83,7 +125,7 @@ public class HillClimbingParser extends Parser {
     }
     
     @Override
-    final public int[][] decode(Sentence sent, int restart, boolean test) {
+    final public int[][] decode(Sentence sent) {
         this.tmpCache = new ArrayList[nCases][52][52];
         
         final int args_length = sent.argIndices.size();
@@ -97,7 +139,7 @@ public class HillClimbingParser extends Parser {
         int best_case_label = -1;        
         int best_prd = -1;
 
-        for (int i=0; i<restart; ++i) {
+        for (int i=0; i<RESTART; ++i) {
             final int[][] graph = setInitGraph(sent);
 
             while (true) {
@@ -243,8 +285,8 @@ public class HillClimbingParser extends Parser {
     
     
     @Override
-    final public ArrayList getFeature(Sentence sentence, int[][] oracleGraph){
-        final ArrayList feature = new ArrayList<>();
+    final public ArrayList<Integer> getFeature(Sentence sentence, int[][] oracleGraph){
+        final ArrayList<Integer> feature = new ArrayList();
         
         final int sentIndex = sentence.index;
         final ArrayList<Integer> argIndices = sentence.argIndices;

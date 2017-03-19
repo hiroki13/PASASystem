@@ -7,14 +7,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  *
  * @author hiroki
  */
 
-public class API {
+public class App {
     
     final ParamChecker paramchecker;
     final Preprocessor preprocessor;
@@ -29,7 +28,7 @@ public class API {
     ArrayList<Sentence> trainCorpus, testCorpus;    
     Perceptron perceptron;
     
-    public API(String[] args) {
+    public App(String[] args) {
         paramchecker = new ParamChecker(args);
         preprocessor = new Preprocessor(N_CASES);
 
@@ -71,54 +70,33 @@ public class API {
         }
     }
     
+    private Parser selectParser() {
+        if ("baseline".equals(PARSER_TYPE))
+            return new BaselineParser(N_CASES, WEIGHT_SIZE);
+        return new HillClimbingParser(N_CASES, WEIGHT_SIZE, RND_SEED);        
+    }
+    
     private void train(ArrayList<Sentence> trainCorpus, ArrayList<Sentence> testCorpus) {            
         System.out.println("Hill-Climbing Restart: " + RESTART);
         System.out.println("Initialization Seed: " + RND_SEED);
         System.out.println(String.format("Train Sents:%d  Test Sents: %d",
                                          trainCorpus.size(), testCorpus.size()));
 
-        Trainer trainer = new Trainer(PARSER_TYPE, trainCorpus, N_CASES, maxSentLen, WEIGHT_SIZE);
-                        
-        System.out.println("TRAINING START");
+        Parser parser = selectParser();
+        Trainer trainer = new Trainer(ITERATION, N_CASES);
+        trainer.train(parser, trainCorpus, testCorpus);
 
-        Evaluater checker = null;
-
-        for (int i=0; i<ITERATION; i++) {
-            System.out.println(String.format("\nIteration %d: ", i+1));
-                
-            long time1 = System.currentTimeMillis();
-            trainer.train(RESTART);
-            long time2 = System.currentTimeMillis();
-            System.out.println("\tTime: " + (time2-time1) + " ms");
-                
-            if (i+1 < ITERATION) {                
-                checker = new Evaluater(N_CASES);
-                checker.test(testCorpus, trainer.parser, RESTART, true);
-            }
-            else if (i+1 == ITERATION) {
-                checker = new Evaluater(N_CASES);
-                checker.testAndOutput(testCorpus, trainer.parser, RESTART, OUTPUT_FILE_NAME, true, true);
-            }
-            
-            trainer.parser.hasCache = true;
-                
-            if (i+1 == ITERATION) {
-                double time = testCorpus.size()/(((double) checker.time)/1000.0);    
-                System.out.println("\tTime: " + time + "sent./sec.");
-                showPerformance(checker);
-            } 
-        }
     }
     
     private void test() throws IOException{
-        Parser parser = new HillClimbingParser(N_CASES, RND_SEED);
+        Parser parser = new HillClimbingParser(N_CASES, RESTART, RND_SEED);
         parser.perceptron = perceptron;
 
         System.out.println("TEST START");                
             
         for (int i=0; i<ITERATION; i++) {
             System.out.println(String.format("\nIteration %d: ", i+1));
-            Evaluater checker = new Evaluater(N_CASES);
+            Evaluator checker = new Evaluator(N_CASES);
 
             String out_fn = OUTPUT_FILE_NAME + "-" + i;
             checker.testAndOutput(testCorpus, parser, RESTART, out_fn,
@@ -127,7 +105,6 @@ public class API {
  
             double time = testCorpus.size()/(((double) checker.time)/1000.0);    
             System.out.println("\tTime: " + time + "sent./sec.");
-            showPerformance(checker);
         }
     }
             
