@@ -73,7 +73,7 @@ public class HillClimbingParser extends Parser {
     }
     
     private int[] extractBestGraphFeatIDs(Sample sample) {
-        return;
+        return null;
     }
 
     @Override

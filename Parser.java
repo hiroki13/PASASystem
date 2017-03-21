@@ -62,8 +62,8 @@ public class Parser {
         return featExtractor.extractUnlabeledFeatIDs(sample, prd, arg);
     }
 
-    final public int[] extractLabeledFeatIDs(int[] unlabeledFeatIDs, int caseLabel) {
-        return featExtractor.extractLabeledFeatIDs(unlabeledFeatIDs, caseLabel);
+    final public int[] extractLabeledFeatIDs(Sample sample, Chunk prd, Chunk arg, int caseLabel) {
+        return featExtractor.extractLabeledFeatIDs(sample, prd, arg, caseLabel);
     }
 
     final public float calcScore(int[] featIDs) {

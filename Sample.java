@@ -86,7 +86,7 @@ public class Sample {
     }
     
     final public void setOracleFeatIDs(FeatureExtractor featExtractor) {
-        oracleFeatIDs = featExtractor.getFeature(this);
+        oracleFeatIDs = featExtractor.extractOracleFeatIDs(this);
     }
 
     final public static Chunk getNextChunk(Sample sample, Chunk chunk) {
