@@ -21,6 +21,9 @@ import java.util.List;
  */
 
 public class Evaluator {
+    public int crr = 0;
+    public int ttl = 0;
+
     public float[] correct;
     public float[] correct_zero;
 
@@ -35,14 +38,35 @@ public class Evaluator {
     
     public long time;
     
-    public Evaluator(int c_length){
-        nCases = c_length;
+    public Evaluator(int nCases){
+        this.nCases = nCases;
         this.correct = new float[nCases];
         this.correct_zero = new float[nCases];
         this.r_dep = new float[nCases];
         this.r_zero = new float[nCases];
         this.p_total = new float[nCases];
         this.p_zero = new float[nCases];
+    }
+    
+    final public void updataAccuracy(int[][] oracleGraph, int[][] systemGraph) {
+        if (oracleGraph.length != systemGraph.length)
+            System.err.print("ERROR");
+        
+        for (int prdIndex=0; prdIndex<oracleGraph.length; ++prdIndex) {
+            for (int caseLabel=0; caseLabel<oracleGraph[prdIndex].length; ++caseLabel) {
+                int oracleArgIndex = oracleGraph[prdIndex][caseLabel];
+                int systemArgIndex = systemGraph[prdIndex][caseLabel];
+                
+                if (oracleArgIndex == systemArgIndex)
+                    crr += 1;
+                ttl += 1;
+            }
+        }
+    }
+    
+    final public void showAccuracy() {
+        float acc = crr / (float) ttl;
+        System.out.println(String.format("\nACC: %f (%d/%d)\n", acc, crr, ttl));
     }
 
     final public void setEval(Sentence sent, int[][] graph) {

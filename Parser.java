@@ -15,6 +15,8 @@ public class Parser {
 
     public Perceptron perceptron;
     public FeatureExtractor featExtractor;
+    public Evaluator evaluator;
+
     public boolean hasCache = false;
     public ArrayList[][][] tmpCache;
     public ArrayList<Integer> bestPhi;
@@ -27,8 +29,15 @@ public class Parser {
     public Parser(int nCases, int rndSeed) {}
 
     public void train(Sample sample) {
+        Graph graph = decode(sample);
+        graph.setBestGraph();
+
+        int[][] oracleGraph = sample.oracleGraph;
+        int[][] bestGraph = graph.bestGraph;
+        evaluator.updataAccuracy(oracleGraph, bestGraph);
+
         int[] oracleFeatIDs = getOracleGraphFeatIDs(sample);
-        int[] systemFeatIDs = extractBestGraphFeatIDs(sample);        
+        int[] systemFeatIDs = extractBestGraphFeatIDs(graph);
         perceptron.updateWeights(oracleFeatIDs, systemFeatIDs);
     }
     
@@ -36,10 +45,9 @@ public class Parser {
         return sample.oracleFeatIDs;
     }
 
-    private int[] extractBestGraphFeatIDs(Sample sample) {
-        Graph graph = decode(sample);
-        graph.setBestGraph();
-        return graph.featIDs;
+    private int[] extractBestGraphFeatIDs(Graph graph) {
+        graph.setBestGraphFeatIDs();
+        return graph.bestGraphFeatIDs;
     }
 
     public int[][] decode(Sentence sent, int[][] oracleGraph) {

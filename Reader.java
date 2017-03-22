@@ -39,17 +39,12 @@ final public class Reader {
 
         while((line=br.readLine()) != null) {
             if(EOS.equals(line)){                    
-//                if (!sent.hasDepCicle()) {
-                if (true) {
-                    sent.setParams();
-                    corpus.add(sent);
+                sent.setParams();
+                corpus.add(sent);
                         
-                    if (corpus.size() == 3) break;
-                    sent = new ChunkSentence(sentIndex++, N_CASES);                        
-                }
-                else {
-                    sent = new ChunkSentence(sentIndex, N_CASES);                        
-                }
+                if (corpus.size() == 100) break;
+
+                sent = new ChunkSentence(sentIndex++, N_CASES);                        
                 wordIndex = 0;
             }
             else if (line.startsWith("*")) {

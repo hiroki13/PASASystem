@@ -13,8 +13,9 @@ import java.io.Serializable;
 
 public class FeatureExtractor implements Serializable{
     final public int nCases;
-    final public static int SIZE = (int) Math.pow(2, 23);
-    final public int N_FEATS = 6;
+//    final public static int SIZE = (int) Math.pow(2, 23);
+    final public static int SIZE = 1000;
+    final public static int N_FEATS = 6;
     
     public FeatureExtractor(int nCases) {
         this.nCases = nCases;
@@ -49,6 +50,7 @@ public class FeatureExtractor implements Serializable{
                 Template.gen(Template.ARG_R_FORM.hash,    ah.R_FORM.hashCode(), caseLabel),
                 Template.gen(Template.ARG_CPOS.hash,    ah.CPOS.hashCode(), caseLabel),
                 Template.gen(Template.ARG_POS.hash,    ah.POS.hashCode(),   caseLabel),
+                Template.gen(Template.BI_R_FORM.hash,    ph.R_FORM.hashCode(),    ah.R_FORM.hashCode(),   caseLabel),
         };
 
         return featIDs;
@@ -78,7 +80,9 @@ public class FeatureExtractor implements Serializable{
         PRD_POS("ppos"),
         ARG_R_FORM("arform"),
         ARG_CPOS("acpos"),
-        ARG_POS("apos");
+        ARG_POS("apos"),
+
+        BI_R_FORM("birform");
 
         private final String label;
         private final int hash;

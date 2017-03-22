@@ -38,7 +38,7 @@ public class Perceptron implements Serializable{
             this.aweight[phiId] += this.t;
         }
         
-        for (int i=0; i<systemPhi[i]; ++i) {
+        for (int i=0; i<systemPhi.length; ++i) {
             int phiId = systemPhi[i];
             this.weight[phiId] -= 1.0f;
             this.aweight[phiId] -= this.t;

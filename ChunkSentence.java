@@ -35,7 +35,7 @@ final public class ChunkSentence extends Sentence {
     
     @Override
     final public void setElemParams() {
-        for (int i=0; i<size()-1; ++i)
+        for (int i=0; i<size(); ++i)
             chunks.get(i).setParams();
     }
         
@@ -46,8 +46,10 @@ final public class ChunkSentence extends Sentence {
     
     final public void setPrds() {
         for (int i=0; i<chunks.size(); ++i)
-            if (chunks.get(i).hasPrd)
+            if (chunks.get(i).hasPrd) {
                 prdIndices.add(i);
+                prds.add(chunks.get(i));
+            }
         if (prdIndices.size() > 0)
             hasPrds = true;
     }
