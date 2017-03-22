@@ -14,11 +14,10 @@ import java.util.ArrayList;
 public class Preprocessor {
 
     final Reader reader;
-    final int N_CASES;
+    final int N_CASES = Config.N_CASES;
 
-    public Preprocessor(int nCases) {
-        reader = new Reader(nCases);
-        N_CASES = nCases;
+    public Preprocessor() {
+        reader = new Reader();
     }
 
     public ArrayList<Sentence> loadCorpus(String fn) throws Exception {

@@ -13,8 +13,8 @@ import java.util.ArrayList;
  */
 
 final public class Chunk implements Serializable{
-    final int INDEX, HEAD_INDEX;
-    final ArrayList<Word> words = new ArrayList();
+    final int INDEX, HEAD;
+    final ArrayList<Word> words;
 
     int ga = -1, o = -1, ni = -1, zeroGa = -1, zeroO = -1, zeroNi = -1;
     int[] parsedDepCases, parsedZeroCases;  // (ga, o, ni)
@@ -35,16 +35,10 @@ final public class Chunk implements Serializable{
     String particle;
     String regform;
     
-    public Chunk(int index, int headIndex) {
+    public Chunk(int index, int head, ArrayList<Word> words) {
         this.INDEX = index;
-        this.HEAD_INDEX = headIndex;
-    }
-    
-    final public void add(Word word) {
-        words.add(word);
-    }
-    
-    final public void setParams() {
+        this.HEAD = head;
+        this.words = words;
         setHead();
         setPrds();
 
@@ -89,16 +83,16 @@ final public class Chunk implements Serializable{
     private Word setNullWord() {
         String[] tokenInfo = new String[]{"NULL", "NULL", "*", "NULL",
                                           "NULL", "*", "*", "_"};
-        return new Word(-1, this, tokenInfo);
+        return new Word(-1, -1, -1, tokenInfo);
     }
 
     final public void setSahenWord() {
         for (int i=0; i<this.words.size(); ++i) {
-            Word token = this.words.get(i);
+            Word word = this.words.get(i);
 
-            if ("サ変名詞".equals(token.POS))
-                this.sahenNoun.add(token);
-            if ("サ変動詞".equals(token.INF_TYPE))
+            if ("サ変名詞".equals(word.POS))
+                this.sahenNoun.add(word);
+            if ("サ変動詞".equals(word.TYPE))
                 this.isSahenVerb = true;
         }
     }
@@ -109,17 +103,17 @@ final public class Chunk implements Serializable{
         String alter3 = "0";
 
         for (int i=0; i<this.words.size(); ++i) {
-            Word token = (Word) this.words.get(i);
-            if (("れる".equals(token.R_FORM) || "れる".equals(token.FORM)
-                || "られる".equals(token.R_FORM) || "られる".equals(token.FORM)
-                || "せる".equals(token.R_FORM) || "せる".equals(token.FORM)) &&
+            Word token = this.words.get(i);
+            if (("れる".equals(token.REG) || "れる".equals(token.FORM)
+                || "られる".equals(token.REG) || "られる".equals(token.FORM)
+                || "せる".equals(token.REG) || "せる".equals(token.FORM)) &&
                 "接尾辞".equals(token.CPOS))                
                 alter1 = "1";
-            if (("できる".equals(token.R_FORM) || "できる".equals(token.FORM)
-                || "出来る".equals(token.R_FORM) || "出来る".equals(token.FORM)) &&
+            if (("できる".equals(token.REG) || "できる".equals(token.FORM)
+                || "出来る".equals(token.REG) || "出来る".equals(token.FORM)) &&
                 this.sahenNoun.size() > 0)
                 alter2 = "1";
-            if (token.INF_FORM.startsWith("デアル列"))
+            if (token.INFL.startsWith("デアル列"))
                 alter3 = "1";
         }
 
@@ -160,7 +154,7 @@ final public class Chunk implements Serializable{
     }
     
     final public void setRegForm() {
-        String rform = this.chead.R_FORM;
+        String rform = this.chead.REG;
 
         if (this.isSahenVerb)
             this.regform = this.compoundSahenNoun;
@@ -170,4 +164,11 @@ final public class Chunk implements Serializable{
             this.regform = this.chead.FORM;
     }
     
+    final public int size() {
+        return words.size();
+    }
+    
+    final public Word getWord(int index) {
+        return words.get(index);
+    }
 }

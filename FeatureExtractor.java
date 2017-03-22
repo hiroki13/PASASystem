@@ -12,14 +12,12 @@ import java.io.Serializable;
  */
 
 public class FeatureExtractor implements Serializable{
-    final public int nCases;
+    final public int nCases = Config.N_CASES;
 //    final public static int SIZE = (int) Math.pow(2, 23);
-    final public static int SIZE = 1000;
-    final public static int N_FEATS = 6;
+    public static int SIZE = 10000;
+    final public static int N_FEATS = 7;
     
-    public FeatureExtractor(int nCases) {
-        this.nCases = nCases;
-    }
+    public FeatureExtractor() {}
     
     final public int[] extractUnlabeledFeatIDs(Sample sample, Chunk prd, Chunk arg) {
         Chunk argNext = Sample.getNextChunk(sample, arg);
@@ -27,10 +25,10 @@ public class FeatureExtractor implements Serializable{
         Word ah = arg.chead;
 
         int[] featIDs = {
-                Template.genUnlabeled(Template.PRD_R_FORM.hash,    ph.R_FORM.hashCode()),
+                Template.genUnlabeled(Template.PRD_RFORM.hash,    ph.REG.hashCode()),
                 Template.genUnlabeled(Template.PRD_CPOS.hash,    ph.CPOS.hashCode()),
                 Template.genUnlabeled(Template.PRD_POS.hash,    ph.POS.hashCode()),
-                Template.genUnlabeled(Template.ARG_R_FORM.hash,    ah.R_FORM.hashCode()),
+                Template.genUnlabeled(Template.ARG_RFORM.hash,    ah.REG.hashCode()),
                 Template.genUnlabeled(Template.ARG_CPOS.hash,    ah.CPOS.hashCode()),
                 Template.genUnlabeled(Template.ARG_POS.hash,    ah.POS.hashCode()),
         };
@@ -44,13 +42,13 @@ public class FeatureExtractor implements Serializable{
         Word ah = arg.chead;
 
         int[] featIDs = {
-                Template.gen(Template.PRD_R_FORM.hash,    ph.R_FORM.hashCode(), caseLabel),
+                Template.gen(Template.PRD_RFORM.hash,    ph.REG.hashCode(), caseLabel),
                 Template.gen(Template.PRD_CPOS.hash,    ph.CPOS.hashCode(),    caseLabel),
                 Template.gen(Template.PRD_POS.hash,    ph.POS.hashCode(),    caseLabel),
-                Template.gen(Template.ARG_R_FORM.hash,    ah.R_FORM.hashCode(), caseLabel),
+                Template.gen(Template.ARG_RFORM.hash,    ah.REG.hashCode(), caseLabel),
                 Template.gen(Template.ARG_CPOS.hash,    ah.CPOS.hashCode(), caseLabel),
                 Template.gen(Template.ARG_POS.hash,    ah.POS.hashCode(),   caseLabel),
-                Template.gen(Template.BI_R_FORM.hash,    ph.R_FORM.hashCode(),    ah.R_FORM.hashCode(),   caseLabel),
+                Template.gen(Template.BI_RFORM.hash,    ph.REG.hashCode(),    ah.REG.hashCode(),   caseLabel),
         };
 
         return featIDs;
@@ -75,14 +73,14 @@ public class FeatureExtractor implements Serializable{
 
     private enum Template {
         // Unigrams
-        PRD_R_FORM("prform"),
-        PRD_CPOS("pcpos"),
-        PRD_POS("ppos"),
-        ARG_R_FORM("arform"),
-        ARG_CPOS("acpos"),
-        ARG_POS("apos"),
+        PRD_RFORM("p:rform"),
+        PRD_CPOS("p:cpos"),
+        PRD_POS("p:pos"),
+        ARG_RFORM("a:rform"),
+        ARG_CPOS("a:cpos"),
+        ARG_POS("a:pos"),
 
-        BI_R_FORM("birform");
+        BI_RFORM("bi:rform");
 
         private final String label;
         private final int hash;
@@ -95,6 +93,7 @@ public class FeatureExtractor implements Serializable{
         private static int gen(int... key) {
             int hash = oneAtATimeHashAll(key);
             return Math.abs(hash) % SIZE;
+//            return (hash >>> 1) % SIZE;
         }
 
         private static int genUnlabeled(int... key) {

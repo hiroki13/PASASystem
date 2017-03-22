@@ -8,15 +8,33 @@
  *
  * @author hiroki
  */
+public class Config {
 
-public class ParamChecker {
-    
     final OptionParser optionparser;
-    
-    ParamChecker(String[] args) {
+    final static int N_CASES = 3;
+    final String MODE;
+    final String PARSER_TYPE;    
+    final String TRAIN_FILE_PATH, TEST_FILE_PATH;
+    final String OUTPUT_FILE_NAME, MODEL_FILE_NAME;
+    final int ITERATION, RESTART, RND_SEED, WEIGHT_SIZE;
+
+    public Config(String[] args) {
         optionparser = new OptionParser(args);
+
+        MODE = getModeSelect();
+        PARSER_TYPE = getParserType();
+
+        TRAIN_FILE_PATH = getTrainFilePath(MODE);
+        TEST_FILE_PATH = getTestFilePath(MODE);
+        OUTPUT_FILE_NAME = getOutputFileName();
+        MODEL_FILE_NAME = getModelFileName();
+        
+        ITERATION = getIteration();
+        RESTART = getRestart();
+        RND_SEED = getRndSeed();
+        WEIGHT_SIZE = getWeightSize();        
     }
-    
+
     final public String getModeSelect() {
         String mode = optionparser.getString("mode");
         if (mode == null) {
@@ -78,7 +96,7 @@ public class ParamChecker {
     }
 
     final public int getWeightSize() {
-        return optionparser.getInt("weight", 1000);
+        return optionparser.getInt("weight", 10000);
     }
-    
+
 }

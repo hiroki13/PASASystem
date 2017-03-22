@@ -1,4 +1,7 @@
 
+import java.util.ArrayList;
+
+
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -11,7 +14,7 @@
  * @author hiroki
  */
 public class Sample {
-    final int nCases = 3;
+    final int N_CASES = Config.N_CASES;
     final public int size;
     final public Chunk[] chunks;
     final public Chunk[] prds;
@@ -61,15 +64,13 @@ public class Sample {
     }
     
     private Chunk setNullChunk(int chunkIndex) {
-        Chunk chunk = new Chunk(chunkIndex, -1);
-        chunk.setParams();
-        return chunk;
+        return new Chunk(chunkIndex, -1, new ArrayList());
     }
 
     final public void setOracleGraph() {
-        oracleGraph = new int[prds.length][nCases];
+        oracleGraph = new int[prds.length][N_CASES];
         for (int prd_i=0; prd_i<prds.length; ++prd_i)
-            for (int case_i=0; case_i<nCases; ++case_i)
+            for (int case_i=0; case_i<N_CASES; ++case_i)
                 oracleGraph[prd_i][case_i] = getArgIndex(prds[prd_i], case_i);
     }
     

@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -13,16 +12,14 @@ import java.util.ArrayList;
 
 public class BaselineParser extends Parser{
 
-    public BaselineParser(int nCases) {
-        this.nCases = nCases;
+    public BaselineParser() {
         this.perceptron = new Perceptron();
-        this.featExtractor = new FeatureExtractor(nCases);
+        this.featExtractor = new FeatureExtractor();
     }
 
-    public BaselineParser(int nCases, int weightSize) {
-        this.nCases = nCases;
-        this.perceptron = new Perceptron(nCases, weightSize);
-        this.featExtractor = new FeatureExtractor(nCases);
+    public BaselineParser(int weightSize) {
+        this.perceptron = new Perceptron(weightSize);
+        this.featExtractor = new FeatureExtractor();
     }
 
     @Override

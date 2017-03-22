@@ -15,9 +15,9 @@ public class Trainer {
     final int ITERATION;
     final Preprocessor preprocessor;
 
-    Trainer(int iteration, int nCases) {
+    Trainer(int iteration) {
         ITERATION = iteration;
-        preprocessor = new Preprocessor(nCases);
+        preprocessor = new Preprocessor();
     }
     
     final public void train(Parser parser,
@@ -29,6 +29,7 @@ public class Trainer {
         Sample[] testSamples = createSamples(testCorpus);
 
         setOracleFeatIDs(trainSamples, parser.featExtractor);
+
         for (int i=0; i<ITERATION; i++) {
             System.out.println(String.format("\nIteration %d: ", i+1));                
             long time1 = System.currentTimeMillis();

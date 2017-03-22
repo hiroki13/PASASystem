@@ -13,6 +13,8 @@ import java.util.ArrayList;
 
 public class Parser {
 
+    final public int nCases = Config.N_CASES;
+
     public Perceptron perceptron;
     public FeatureExtractor featExtractor;
     public Evaluator evaluator;
@@ -20,13 +22,10 @@ public class Parser {
     public boolean hasCache = false;
     public ArrayList[][][] tmpCache;
     public ArrayList<Integer> bestPhi;
-    public int nCases;
 
     public Parser() {}
 
-    public Parser(int nCases) {}
-    
-    public Parser(int nCases, int rndSeed) {}
+    public Parser(int rndSeed) {}
 
     public void train(Sample sample) {
         Graph graph = decode(sample);

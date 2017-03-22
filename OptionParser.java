@@ -9,7 +9,7 @@
  * @author hiroki
  */
 
-final public class OptionParser {
+public class OptionParser {
     final private String[] args;
 
     public OptionParser(String[] args){
@@ -17,19 +17,23 @@ final public class OptionParser {
     }
     
     final public boolean isExsist(String key){
-        for(String arg:args) if(("-"+key).equals(arg)) return true;
+        for(String arg:args)
+            if(("-"+key).equals(arg))
+                return true;
         return false;
     }
     
     final public String getString(String key){
-        for(int i=0;i<args.length;i++)
-            if(("-"+key).equals(args[i])) return args[i+1];
+        for(int i=0; i<args.length; i++)
+            if(("-"+key).equals(args[i]))
+                return args[i+1];
         return null;
     }
 
     final public int getInt(String key, int defaultvalue){
-        for(int i=0;i<args.length;i++)
-            if(("-"+key).equals(args[i])) return Integer.valueOf(args[i+1]);
+        for(int i=0; i<args.length; i++)
+            if(("-"+key).equals(args[i]))
+                return Integer.valueOf(args[i+1]);
         return defaultvalue;
     }
         

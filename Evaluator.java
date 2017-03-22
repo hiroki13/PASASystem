@@ -135,7 +135,7 @@ public class Evaluator {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (arg.HEAD_INDEX != prd.INDEX && prd.HEAD_INDEX != arg.INDEX)
+                if (arg.HEAD != prd.INDEX && prd.HEAD != arg.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -173,7 +173,7 @@ public class Evaluator {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (chunk_a.HEAD_INDEX != chunk_p.INDEX && chunk_p.HEAD_INDEX != chunk_a.INDEX)
+                if (chunk_a.HEAD != chunk_p.INDEX && chunk_p.HEAD != chunk_a.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -369,7 +369,7 @@ public class Evaluator {
                 }
                                 
                 String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
-                                            c.INDEX, c.HEAD_INDEX,
+                                            c.INDEX, c.HEAD,
                                             Integer.toString(c.ga),
                                             Integer.toString(c.o),
                                             Integer.toString(c.ni),
@@ -382,8 +382,8 @@ public class Evaluator {
                 for (int k=0; k<c.words.size(); ++k) {
                     Word t = (Word) c.words.get(k);
                     text = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
-                                        t.FORM, t.YOMI, t.R_FORM, t.CPOS,
-                                        t.POS, t.INF_TYPE, t.INF_FORM, t.PAS);
+                                        t.FORM, t.PRON, t.REG, t.CPOS,
+                                        t.POS, t.INF_TYPE, t.INFL, t.PAS);
                     pw.println(text);                    
                 }
             }

@@ -5,7 +5,6 @@
  */
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 /**
  *
@@ -17,7 +16,7 @@ public class Perceptron implements Serializable{
     public float[] aweight;
     public float t = 1.0f;
 
-    public Perceptron(int nCases, int weightSize){
+    public Perceptron(int weightSize){
         this.weight = new float[weightSize];
         this.aweight = new float[weightSize];
     }

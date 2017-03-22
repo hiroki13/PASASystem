@@ -18,15 +18,13 @@ public class HillClimbingParser extends Parser {
     final private int RESTART;
     final private Random rnd;
 
-    public HillClimbingParser(int nCases, int weightSize, int restart, int rndSeed) {
-        this.nCases = nCases;
+    public HillClimbingParser(int weightSize, int restart, int rndSeed) {
         this.rnd = setRndSeed(rndSeed);
         this.RESTART = restart;
-        this.perceptron = new Perceptron(nCases, weightSize);
+        this.perceptron = new Perceptron(weightSize);
     }
 
-    public HillClimbingParser(int nCases, int restart, int rndSeed) {
-        this.nCases = nCases;
+    public HillClimbingParser(int restart, int rndSeed) {
         this.rnd = setRndSeed(rndSeed); 
         this.RESTART = restart;
         this.perceptron = new Perceptron();
@@ -80,7 +78,7 @@ public class HillClimbingParser extends Parser {
     final public int[][] decode(Sentence sent, int[][] oracleGraph) {
         int nArgs = sent.argIndices.size();
         int nPrds = sent.prdIndices.size();
-        ArrayList[][][] cache = perceptron.cacheFeats[sent.index];
+        ArrayList[][][] cache = perceptron.cacheFeats[sent.INDEX];
 
         float prevBestScore = -10000000.0f, bestScore = -10000000.0f;
         int[][] bestGraph = new int[nPrds][nCases];
@@ -288,7 +286,7 @@ public class HillClimbingParser extends Parser {
     final public ArrayList<Integer> getFeature(Sentence sentence, int[][] oracleGraph){
         final ArrayList<Integer> feature = new ArrayList();
         
-        final int sentIndex = sentence.index;
+        final int sentIndex = sentence.INDEX;
         final ArrayList<Integer> argIndices = sentence.argIndices;
         final ArrayList<Integer> prdIndices = sentence.prdIndices;
         final ArrayList[][][] cache = perceptron.cacheFeats[sentIndex];

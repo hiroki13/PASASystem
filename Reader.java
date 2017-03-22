@@ -15,15 +15,11 @@ import java.util.ArrayList;
  * @author hiroki
  */
 
-final public class Reader {
-    final String TAB = "\t";
+public class Reader {
     final String SPACE = " ";
     final String EOS = "EOS";
-    final int N_CASES;
     
-    public Reader(int nCases) {
-        N_CASES = nCases;
-    }
+    public Reader() {}
     
     final public ArrayList<Sentence> read(String fn) throws Exception{
         ArrayList<Sentence> corpus = new ArrayList();
@@ -32,34 +28,36 @@ final public class Reader {
             return corpus;
 
         String line;
-        int docIndex=0, sentIndex = 0, wordIndex = 0;
+        ArrayList<Word> words = new ArrayList();
+        int sentIndex = 0, wordIndex = 0, chunkIndex = -1, chunkHead = -1;
 
-        Sentence sent = new ChunkSentence(sentIndex++, N_CASES);
+        Sentence sent = new Sentence(sentIndex++);
         BufferedReader br = getFile(fn);
 
         while((line=br.readLine()) != null) {
             if(EOS.equals(line)){                    
+                sent.add(new Chunk(chunkIndex, chunkHead, words));
                 sent.setParams();
                 corpus.add(sent);
                         
-                if (corpus.size() == 100) break;
+                if (corpus.size() == 1000) break;
 
-                sent = new ChunkSentence(sentIndex++, N_CASES);                        
+                sent = new Sentence(sentIndex++);                        
                 wordIndex = 0;
+                words = new ArrayList();
             }
             else if (line.startsWith("*")) {
+                if (words.size() > 0)
+                    sent.add(new Chunk(chunkIndex, chunkHead, words));
+                words = new ArrayList();
                 String[] depInfo = line.split(SPACE);
-                int chunkIndex = Integer.parseInt(depInfo[1]);
-                int chunkHeadIndex = Integer.parseInt(depInfo[2].substring(0, depInfo[2].length()-1));
-                sent.chunks.add(new Chunk(chunkIndex, chunkHeadIndex));
+                chunkIndex = Integer.parseInt(depInfo[1]);
+                chunkHead = Integer.parseInt(depInfo[2].substring(0, depInfo[2].length()-1));
             }
-            else if (line.startsWith("#"))
-                sent.ntcId = docIndex++;
+            else if (line.startsWith("#")) {}
             else {
-                Chunk chunk = sent.chunks.get(sent.chunks.size()-1);
-                Word word = new Word(wordIndex++, chunk, line.split(SPACE));
-                sent.words.add(word);
-                chunk.words.add(word);
+                Word word = new Word(wordIndex++, chunkIndex, chunkHead, line.split(SPACE));
+                words.add(word);
             }
         }
         
