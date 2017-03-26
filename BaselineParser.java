@@ -35,7 +35,7 @@ public class BaselineParser extends Parser{
                 Chunk arg = sample.args[argIndex];                
 
                 for (int caseLabel=0; caseLabel<nCases; caseLabel++) {
-                    int [] labeledFeatIDs = extractLabeledFeatIDs(sample, prd, arg, caseLabel);
+                    int [] labeledFeatIDs = extractLabeledFeatIDs(sample, prd, arg, prdIndex, caseLabel);
                     float score = calcScore(labeledFeatIDs);                    
                     graph.addFeatIDs(labeledFeatIDs, prdIndex, argIndex, caseLabel);
                     graph.addScore(score, prdIndex, argIndex, caseLabel);

@@ -135,7 +135,7 @@ public class Evaluator {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (arg.HEAD != prd.INDEX && prd.HEAD != arg.INDEX)
+                if (arg.DEP_HEAD != prd.INDEX && prd.DEP_HEAD != arg.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -173,7 +173,7 @@ public class Evaluator {
             if (systemArgIndex != argIndices.size()-1) {
                 p_total[caseLabel] += 1.0f;
 
-                if (chunk_a.HEAD != chunk_p.INDEX && chunk_p.HEAD != chunk_a.INDEX)
+                if (chunk_a.DEP_HEAD != chunk_p.INDEX && chunk_p.DEP_HEAD != chunk_a.INDEX)
                     p_zero[caseLabel] += 1.0f;
 
                 if (oracleArgIndex == systemArgIndex) {
@@ -351,7 +351,7 @@ public class Evaluator {
             pw.println("#");
 
             int prd_i = 0;
-            for (int j=0; j<sentence.size()-1; ++j) {
+            for (int j=0; j<sentence.sizeChunks()-1; ++j) {
                 Chunk c = chunks.get(j);
 
                 int[] predicted_case;                
@@ -364,12 +364,12 @@ public class Evaluator {
                 }
                 
                 for (int k=0; k<predicted_case.length; ++k) {
-                    if (predicted_case[k] == sentence.size() - 1)
+                    if (predicted_case[k] == sentence.sizeChunks() - 1)
                         predicted_case[k] = -1;
                 }
                                 
                 String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
-                                            c.INDEX, c.HEAD,
+                                            c.INDEX, c.DEP_HEAD,
                                             Integer.toString(c.ga),
                                             Integer.toString(c.o),
                                             Integer.toString(c.ni),

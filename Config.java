@@ -84,7 +84,7 @@ public class Config {
     }
     
     final public int getIteration() {
-        return optionparser.getInt("iter", 10);
+        return optionparser.getInt("iter", 50);
     }
 
     final public int getRestart() {
@@ -96,7 +96,7 @@ public class Config {
     }
 
     final public int getWeightSize() {
-        return optionparser.getInt("weight", 10000);
+        return optionparser.getInt("weight", 100000);
     }
 
 }

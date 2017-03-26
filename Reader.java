@@ -16,8 +16,8 @@ import java.util.ArrayList;
  */
 
 public class Reader {
-    final String SPACE = " ";
-    final String EOS = "EOS";
+    final private String SPACE = " ";
+    final private String EOS = "EOS";
     
     public Reader() {}
     
@@ -31,24 +31,24 @@ public class Reader {
         ArrayList<Word> words = new ArrayList();
         int sentIndex = 0, wordIndex = 0, chunkIndex = -1, chunkHead = -1;
 
-        Sentence sent = new Sentence(sentIndex++);
+//        Sentence sent = new Sentence(sentIndex++);
+        ArrayList<Chunk> chunks = new ArrayList();
         BufferedReader br = getFile(fn);
 
         while((line=br.readLine()) != null) {
             if(EOS.equals(line)){                    
-                sent.add(new Chunk(chunkIndex, chunkHead, words));
-                sent.setParams();
-                corpus.add(sent);
+                chunks.add(new Chunk(chunkIndex, chunkHead, words));
+                corpus.add(new Sentence(sentIndex++, chunks));
                         
                 if (corpus.size() == 1000) break;
 
-                sent = new Sentence(sentIndex++);                        
+                chunks = new ArrayList();
                 wordIndex = 0;
                 words = new ArrayList();
             }
             else if (line.startsWith("*")) {
                 if (words.size() > 0)
-                    sent.add(new Chunk(chunkIndex, chunkHead, words));
+                    chunks.add(new Chunk(chunkIndex, chunkHead, words));
                 words = new ArrayList();
                 String[] depInfo = line.split(SPACE);
                 chunkIndex = Integer.parseInt(depInfo[1]);

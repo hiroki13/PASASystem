@@ -31,21 +31,20 @@ public class App {
         ArrayList<Sentence> trainCorpus = preprocessor.loadCorpus(config.TRAIN_FILE_PATH);
         ArrayList<Sentence> testCorpus = preprocessor.loadCorpus(config.TEST_FILE_PATH);
 
-        if ("train".equals(config.MODE)) {
-            train(trainCorpus, testCorpus);
-        }
-        else if ("test".equals(config.MODE)) {
-            System.out.println("Test Sents: " + testCorpus.size());
-            System.out.println("Model Loaded...");
-
-            ObjectInputStream perceptronStream
-                = new ObjectInputStream(new FileInputStream(config.MODEL_FILE_NAME));      
-            perceptron = (Perceptron) perceptronStream.readObject();
-            perceptronStream.close();
-
-            System.out.println("Model Loading Completed\n");
-            
-            test();
+        switch (config.MODE) {
+            case "train":
+                train(trainCorpus, testCorpus);
+                break;
+            case "test":
+                System.out.println("Test Sents: " + testCorpus.size());
+                System.out.println("Model Loaded...");
+                ObjectInputStream perceptronStream
+                        = new ObjectInputStream(new FileInputStream(config.MODEL_FILE_NAME));
+                perceptron = (Perceptron) perceptronStream.readObject();
+                perceptronStream.close();
+                System.out.println("Model Loading Completed\n");
+                test();
+                break;
         }
     }
     

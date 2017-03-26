@@ -13,162 +13,191 @@ import java.util.ArrayList;
  */
 
 final public class Chunk implements Serializable{
-    final int INDEX, HEAD;
-    final ArrayList<Word> words;
+    final public int INDEX, DEP_HEAD;
+    final public Word[] words;
 
-    int ga = -1, o = -1, ni = -1, zeroGa = -1, zeroO = -1, zeroNi = -1;
-    int[] parsedDepCases, parsedZeroCases;  // (ga, o, ni)
+    final public Word chead, cfunc, prd;
+    final public boolean hasPrd, hasVerb, hasSahenVerb;    
     
-    Word chead;
-    Word cfunc;
-    Word prd;
-    ArrayList<Word> sahenNoun = new ArrayList();
-
-    boolean isVerb = false;
-    boolean isSahenVerb = false;
-    boolean hasPrd = false;
+    final public String sahenNoun, compoundContWord, compoundFuncWord;
+    final public String regform, particle, voiceSuffix;
     
-    String caseAlterSuffix = "";
-    String compoundSahenNoun = "";
-    String compoundNoun = "";
-    String compoundFuncWord = "";
-    String particle;
-    String regform;
-    
-    public Chunk(int index, int head, ArrayList<Word> words) {
+    public Chunk(int index, int dep_head, ArrayList<Word> words) {
         this.INDEX = index;
-        this.HEAD = head;
-        this.words = words;
-        setHead();
-        setPrds();
+        this.DEP_HEAD = dep_head;
+        this.words = setWords(words);
 
-        setSahenWord();        
-        setCaseAlterSuffix();        
-        setCompoundWords();        
-        setParticle();        
-        setRegForm();
+        this.chead = setHead();
+        this.cfunc = setFunc();
+        this.prd = setPrd();
+        
+        this.hasPrd = setHasPrd();
+        this.hasVerb = setHasVerb();
+        this.hasSahenVerb = setHasSahenVerb();
+
+        this.sahenNoun = setSahenNoun();
+        this.compoundContWord = setCompoundContWord();
+        this.compoundFuncWord = setCompoundFuncWord();
+
+        this.regform = setRegForm();
+        this.particle = setParticle();
+        this.voiceSuffix = setVoiceSuffix();
     }
     
-    final public void setHead(){
-        for (int i=0; i<this.words.size(); ++i) {
-            Word word = this.words.get(i);
+    final public static Chunk getNullChunk(int chunkIndex) {
+        return new Chunk(chunkIndex, -1, new ArrayList());        
+    }
 
-            if ("動詞".equals(word.CPOS))
-                this.isVerb = true;
-            
+    private Word[] setWords(ArrayList<Word> tmpWords) {
+        Word[] words = new Word[tmpWords.size()];
+        for (int i=0; i<tmpWords.size(); ++i)
+            words[i] = tmpWords.get(i);
+        return words;
+    }
+
+    private Word setHead() {
+        Word head = null;
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
+
             if (!"特殊".equals(word.CPOS)
                     && !"助詞".equals(word.CPOS)
                     && !"接尾辞".equals(word.CPOS)
                     && !"助動詞".equals(word.CPOS))
-                this.chead = word;
-            else if (!"特殊".equals(word.CPOS))
-                this.cfunc = word;
+                head = word;
         }
         
-        if (this.chead == null)
-            this.chead = setNullWord();
+        if (head == null)
+            return Word.getNullWord();
+        return head;
     }
     
-    private void setPrds() {
-        if (chead != null && chead.IS_PRD) {
-            prd = chead;
-            hasPrd = true;
+    private Word setFunc() {
+        Word func = null;
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
+
+            if (!"特殊".equals(word.CPOS) && chead != word)
+                func = word;
         }
-        if (cfunc != null && cfunc.IS_PRD) {
-            prd = cfunc;
-            hasPrd = true;
-        }
+        
+        if (func == null)
+            return Word.getNullWord();
+        return func;
     }
     
-    private Word setNullWord() {
-        String[] tokenInfo = new String[]{"NULL", "NULL", "*", "NULL",
-                                          "NULL", "*", "*", "_"};
-        return new Word(-1, -1, -1, tokenInfo);
+    private Word setPrd() {
+        Word prd = null;
+        for (int i=0; i<words.length; ++i) {
+            Word word = words[i];
+            if (word.IS_PRD)
+                prd = word;
+        }
+        return prd;
     }
-
-    final public void setSahenWord() {
-        for (int i=0; i<this.words.size(); ++i) {
-            Word word = this.words.get(i);
-
-            if ("サ変名詞".equals(word.POS))
-                this.sahenNoun.add(word);
+    
+    private boolean setHasPrd() {
+        return prd != null;
+    }
+    
+    private boolean setHasVerb(){
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
+            if ("動詞".equals(word.CPOS))
+                return true;
+        }
+        return false;
+    }
+    
+    private boolean setHasSahenVerb() {
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
             if ("サ変動詞".equals(word.TYPE))
-                this.isSahenVerb = true;
+                return true;
         }
+        return false;
     }
 
-    final public void setCaseAlterSuffix() {
-        String alter1 = "0";
-        String alter2 = "0";
-        String alter3 = "0";
+    private String setSahenNoun() {
+        String sahenNoun = "";
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
+            if ("サ変名詞".equals(word.POS))
+                sahenNoun += word.FORM;
+        }
+        return sahenNoun;
+    }
+    
+    private String setCompoundContWord() {
+        String compoundContWord = "";
+        if (chead.INDEX < 0)
+            return compoundContWord;
+        for (int i=0; i<this.words.length; ++i) {
+            Word word = this.words[i];
+            compoundContWord += word.FORM;
+            if (word == chead)
+                break;
+        }
+        return compoundContWord;
+    }
 
-        for (int i=0; i<this.words.size(); ++i) {
-            Word token = this.words.get(i);
+    private String setCompoundFuncWord() {
+        String compoundFuncWord = "";
+        if (chead.INDEX < 0)
+            for (int i=0; i<this.words.length; ++i)
+                compoundFuncWord += this.words[i].FORM;
+        else
+            for (int i=0; i<this.words.length; ++i) {
+                Word word = this.words[i];
+                if (word.INDEX <= chead.INDEX)
+                    continue;
+                compoundFuncWord += word.FORM;
+            }
+        return compoundFuncWord;
+    }
+
+    private String setRegForm() {
+        if (this.hasSahenVerb)
+            return this.sahenNoun;
+        String rform = this.chead.REG;
+        if (!"*".equals(rform))
+            return rform;
+        return this.chead.FORM;
+    }
+    
+    private String setParticle() {
+        return this.cfunc.FORM;
+    }
+    
+    private String setVoiceSuffix() {
+        String voice1 = "0";
+        String voice2 = "0";
+        String voice3 = "0";
+
+        for (int i=0; i<this.words.length; ++i) {
+            Word token = this.words[i];
             if (("れる".equals(token.REG) || "れる".equals(token.FORM)
                 || "られる".equals(token.REG) || "られる".equals(token.FORM)
                 || "せる".equals(token.REG) || "せる".equals(token.FORM)) &&
                 "接尾辞".equals(token.CPOS))                
-                alter1 = "1";
+                voice1 = "1";
             if (("できる".equals(token.REG) || "できる".equals(token.FORM)
                 || "出来る".equals(token.REG) || "出来る".equals(token.FORM)) &&
-                this.sahenNoun.size() > 0)
-                alter2 = "1";
+                this.sahenNoun.length() > 0)
+                voice2 = "1";
             if (token.INFL.startsWith("デアル列"))
-                alter3 = "1";
+                voice3 = "1";
         }
 
-        this.caseAlterSuffix = alter1 + alter2 + alter3;
-    }
-    
-    final public void setCompoundWords() {
-        Word chead = this.chead;
-        if (chead != null) {
-            if (this.isSahenVerb) {
-                for(int i=0; i<this.sahenNoun.size(); ++i) {
-                    this.compoundSahenNoun += this.sahenNoun.get(i).FORM;
-                }
-            }
-            
-            int head = 100;
-            for (int i=0; i<this.words.size(); ++i) {
-                String form = this.words.get(i).FORM;
-                this.compoundNoun += form;
-                if (form.equals(chead.FORM)) {
-                    head = i+1;
-                    break;
-                }
-            }
-
-            for (int i=head; i<this.words.size(); ++i) {
-                String form = this.words.get(i).FORM;
-                this.compoundFuncWord += form;
-            }
-        }
-    }
-    
-    final public void setParticle() {
-        if (this.cfunc == null)
-            this.particle = "";
-	else
-            this.particle = this.cfunc.FORM;
-    }
-    
-    final public void setRegForm() {
-        String rform = this.chead.REG;
-
-        if (this.isSahenVerb)
-            this.regform = this.compoundSahenNoun;
-        else if (!"*".equals(rform))
-            this.regform = rform;
-        else
-            this.regform = this.chead.FORM;
+        return voice1 + voice2 + voice3;
     }
     
     final public int size() {
-        return words.size();
+        return words.length;
     }
     
     final public Word getWord(int index) {
-        return words.get(index);
+        return words[index];
     }
+    
 }

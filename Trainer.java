@@ -28,6 +28,8 @@ public class Trainer {
         Sample[] trainSamples = createSamples(trainCorpus);
         Sample[] testSamples = createSamples(testCorpus);
 
+        preprocessor.showStats(trainSamples);
+
         setOracleFeatIDs(trainSamples, parser.featExtractor);
 
         for (int i=0; i<ITERATION; i++) {
