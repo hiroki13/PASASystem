@@ -4,51 +4,31 @@
  * and open the template in the editor.
  */
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  *
  * @author hiroki
  */
 
 public class Evaluator {
+    final public int N_CASES = Config.N_CASES;
+    final public int N_TYPES = 2;
+    final public int DEP = Word.DEP;
+    final public int INTRA_ZERO = Word.INTRA_ZERO;
+
     public int crr = 0;
     public int ttl = 0;
 
-    public float[] correct;
-    public float[] correct_zero;
-
-    public float[] r_dep;
-    public float[] r_zero;
-    public float[] p_total;
-    public float[] p_zero;
-
-    public Parser parser;
-    public float alpha;
-    public int nCases;
+    final public int[][] correct;
+    final public int[][] oracleTotal;
+    final public int[][] systemTotal;
     
-    public long time;
-    
-    public Evaluator(int nCases){
-        this.nCases = nCases;
-        this.correct = new float[nCases];
-        this.correct_zero = new float[nCases];
-        this.r_dep = new float[nCases];
-        this.r_zero = new float[nCases];
-        this.p_total = new float[nCases];
-        this.p_zero = new float[nCases];
+    public Evaluator(){
+        this.correct = new int[N_CASES+1][N_TYPES+1];
+        this.oracleTotal = new int[N_CASES+1][N_TYPES+1];
+        this.systemTotal = new int[N_CASES+1][N_TYPES+1];
     }
     
-    final public void updataAccuracy(int[][] oracleGraph, int[][] systemGraph) {
+    final public void updateAccuracy(int[][] oracleGraph, int[][] systemGraph) {
         if (oracleGraph.length != systemGraph.length)
             System.err.print("ERROR");
         
@@ -66,334 +46,144 @@ public class Evaluator {
     
     final public void showAccuracy() {
         float acc = crr / (float) ttl;
-        System.out.println(String.format("\nACC: %f (%d/%d)\n", acc, crr, ttl));
+        System.out.println(String.format("\nACC: %f (%d/%d)", acc, crr, ttl));
     }
+    
+    final public void update(Sample sample, int[][] oracleGraph, int[][] systemGraph) {
+        if (oracleGraph.length != systemGraph.length)
+            System.err.print("ERROR");
 
-    final public void setEval(Sentence sent, int[][] graph) {
-        ArrayList<Chunk> chunks = sent.chunks;
-        ArrayList<Integer> argIndices = sent.argIndices;
-        ArrayList<Integer> prdIndices = sent.prdIndices;
-        int[][] oracleGraph = sent.oracleGraph;
-        int[] oracleCaseGraph = new int[graph.length];
-        int[] systemCaseGraph = new int[graph.length];
-        
-        for (int caseLabel=0; caseLabel<nCases; caseLabel++) {
-
-            for (int prd_i=0; prd_i<graph.length; prd_i++) {
-                oracleCaseGraph[prd_i] = oracleGraph[prd_i][caseLabel];
-                systemCaseGraph[prd_i] = graph[prd_i][caseLabel];
-            }
+        int NULL_ARG_INDEX = sample.NULL_ARG_INDEX;
+        for (int prdIndex=0; prdIndex<oracleGraph.length; ++prdIndex) {
+            Chunk prd = sample.prds[prdIndex];
             
-            r_dep[caseLabel] += sent.nDepCaseArgs[caseLabel];
-            r_zero[caseLabel] += sent.nZeroCaseArgs[caseLabel];
+            for (int caseLabel=0; caseLabel<oracleGraph[prdIndex].length; ++caseLabel) {
+                Chunk oracleArg = sample.args[oracleGraph[prdIndex][caseLabel]];
+                Chunk systemArg = sample.args[systemGraph[prdIndex][caseLabel]];
 
-            eval(chunks, argIndices, prdIndices, oracleCaseGraph, systemCaseGraph, caseLabel);
+                updateTotal(oracleTotal[caseLabel], prd, oracleArg, NULL_ARG_INDEX);
+                updateTotal(systemTotal[caseLabel], prd, systemArg, NULL_ARG_INDEX);
+                updateCorrect(correct[caseLabel], prd, oracleArg, systemArg, NULL_ARG_INDEX);
+            }
         }
     }
     
-    final public void setWordEval(Sentence sent, int[][] graph) {
-        ArrayList<Word> words = sent.words;
-        ArrayList<Integer> argIndices = sent.argIndices;
-        ArrayList<Integer> prdIndices = sent.prdIndices;
-        int[][] oracleGraph = sent.oracleGraph;
-        int[] oracleCaseGraph = new int[graph.length];
-        int[] systemCaseGraph = new int[graph.length];
-        
-        for (int caseLabel=0; caseLabel<nCases; caseLabel++) {
+    final public void show() {
+        float[][][] metrics = summarize();
+        for (int caseLabel=0; caseLabel<metrics.length; ++caseLabel) {
+            System.out.println(String.format("\n\tCase:%s", getCaseName(caseLabel)));
 
-            for (int prd_i=0; prd_i<graph.length; prd_i++) {
-                oracleCaseGraph[prd_i] = oracleGraph[prd_i][caseLabel];
-                systemCaseGraph[prd_i] = graph[prd_i][caseLabel];
+            for (int argType=0; argType<metrics[caseLabel].length; ++argType) {
+                float[] scores = metrics[caseLabel][argType];
+                float p = scores[0];
+                float r = scores[1];
+                float f = scores[2];
+                int crr = correct[caseLabel][argType];
+                int orcttl = oracleTotal[caseLabel][argType];
+                int systtl = systemTotal[caseLabel][argType];
+
+                String text = String.format("\t\t%s:  F:%f  P:%f (%d/%d)  R:%f (%d/%d)",
+                        getArgTypeName(argType), f, p, crr, systtl, r, crr, orcttl);
+                System.out.println(text);
             }
-            
-            r_dep[caseLabel] += sent.nDepCaseArgs[caseLabel];
-            r_zero[caseLabel] += sent.nZeroCaseArgs[caseLabel];
-
-            wordEval(words, argIndices, prdIndices, oracleCaseGraph, systemCaseGraph, caseLabel);
         }
     }
     
-    private void eval(ArrayList<Chunk> chunks, ArrayList<Integer> argIndices,
-                      ArrayList<Integer> prdIndices, int[] oracleGraph,
-                      int[] systemGraph, int caseLabel) {
-        int zeroArg;
-        
-        for (int prd_i=0; prd_i<systemGraph.length; ++prd_i) {
-            int systemArgIndex = systemGraph[prd_i];
-            int oracleArgIndex = oracleGraph[prd_i];
-            
-            Chunk prd = chunks.get(prdIndices.get(prd_i));
-            Chunk arg = chunks.get(systemArgIndex);
-            
-            if (caseLabel == 0)
-                zeroArg = prd.zeroGa;
-            else if (caseLabel == 1)
-                zeroArg = prd.zeroO;
+    private String getCaseName(int caseLabel) {
+        if (caseLabel == 0)
+            return "GA";
+        else if (caseLabel == 1)
+            return "WO";
+        else if (caseLabel == 2)
+            return "NI";
+        return "ALL";
+    }
+    
+    private String getArgTypeName(int argType) {
+        if (argType == 0)
+            return "DEP ";
+        else if (argType == 1)
+            return "ZERO";
+        return "ALL ";
+    }
+    
+    private float[][][] summarize() {
+        float[][][] metrics = new float[N_CASES+1][N_TYPES+1][];
+
+        for (int caseLabel=0; caseLabel<N_CASES; ++caseLabel) {
+            metrics[caseLabel][N_TYPES] = summarizeEachCase(correct[caseLabel],
+                                                            oracleTotal[caseLabel],
+                                                            systemTotal[caseLabel]);
+
+            for (int argType=0; argType<N_TYPES; ++argType)
+                metrics[caseLabel][argType] = calcMetrics(correct[caseLabel][argType],
+                                                          oracleTotal[caseLabel][argType],
+                                                          systemTotal[caseLabel][argType]);
+        }
+        metrics[N_CASES] = summarizeAllCases();
+        return metrics;
+    }
+    
+    private float[] summarizeEachCase(int[] correct, int[] oracleTotal, int[] systemTotal) {
+        for (int argType=0; argType<N_TYPES; ++argType) {
+            correct[N_TYPES] += correct[argType];
+            oracleTotal[N_TYPES] += oracleTotal[argType];
+            systemTotal[N_TYPES] += systemTotal[argType];
+        }
+        return calcMetrics(correct[N_TYPES], oracleTotal[N_TYPES], systemTotal[N_TYPES]);
+    }
+    
+    private float[][] summarizeAllCases() {
+        for (int caseLabel=0; caseLabel<N_CASES; ++caseLabel) {
+            for (int argType=0; argType<N_TYPES; ++argType) {
+                correct[N_CASES][argType] += correct[caseLabel][argType];
+                oracleTotal[N_CASES][argType] += oracleTotal[caseLabel][argType];
+                systemTotal[N_CASES][argType] += systemTotal[caseLabel][argType];
+            }
+        }
+
+        float[][] metrics = new float[N_TYPES+1][];
+        for (int argType=0; argType<N_TYPES; ++argType) {
+            correct[N_CASES][N_TYPES] += correct[N_CASES][argType];
+            oracleTotal[N_CASES][N_TYPES] += oracleTotal[N_CASES][argType];
+            systemTotal[N_CASES][N_TYPES] += systemTotal[N_CASES][argType];
+            metrics[argType] = calcMetrics(correct[N_CASES][argType],
+                                           oracleTotal[N_CASES][argType],
+                                           systemTotal[N_CASES][argType]);
+        }
+        metrics[N_TYPES] = calcMetrics(correct[N_CASES][N_TYPES],
+                                       oracleTotal[N_CASES][N_TYPES],
+                                       systemTotal[N_CASES][N_TYPES]);
+        return metrics;
+    }
+    
+    private float[] calcMetrics(int correct, int oracleTotal, int systemTotal) {
+        float recall = correct / (float) oracleTotal;
+        float precision = correct / (float) systemTotal;
+        float f1 = (2 * recall * precision) / (recall + precision);
+        return new float[]{precision, recall, f1};
+    }
+
+    private void updateTotal(int[] total, Chunk prd, Chunk arg, int nullArgIndex) {
+        if (arg.INDEX != nullArgIndex)
+            if (hasDep(prd, arg))
+                total[DEP] += 1;
             else
-                zeroArg = prd.zeroNi;
-            
-            if (systemArgIndex != argIndices.size()-1) {
-                p_total[caseLabel] += 1.0f;
-
-                if (arg.DEP_HEAD != prd.INDEX && prd.DEP_HEAD != arg.INDEX)
-                    p_zero[caseLabel] += 1.0f;
-
-                if (oracleArgIndex == systemArgIndex) {
-                    correct[caseLabel] += 1.0f;
-                    
-                    if (systemArgIndex == zeroArg)
-                        correct_zero[caseLabel] += 1.0f;
-                }
-                
-            }
-        }
+                total[INTRA_ZERO] += 1;        
     }
     
-    private void wordEval(ArrayList<Word> words, ArrayList<Integer> argIndices,
-                           ArrayList<Integer> prdIndices, int[] oracleGraph,
-                           int[] systemGraph, int caseLabel) {
-        int zeroArg;
-        
-        for (int prd_i=0; prd_i<systemGraph.length; ++prd_i) {
-            int systemArgIndex = systemGraph[prd_i];
-            int oracleArgIndex = oracleGraph[prd_i];
-            
-            Word prd = words.get(prdIndices.get(prd_i));
-            Word arg = words.get(systemArgIndex);
-            Chunk chunk_p = prd.CHUNK;
-            Chunk chunk_a = arg.CHUNK;
-            
-            if (caseLabel == 0)
-                zeroArg = prd.zeroGa;
-            else if (caseLabel == 1)
-                zeroArg = prd.zeroO;
+    private void updateCorrect(int[] correct, Chunk prd, Chunk oracleArg, Chunk systemArg, int nullArgIndex) {
+        if (oracleArg.INDEX != nullArgIndex && oracleArg.INDEX == systemArg.INDEX)
+            if (hasDep(prd, oracleArg))
+                correct[DEP] += 1;
             else
-                zeroArg = prd.zeroNi;
-            
-            if (systemArgIndex != argIndices.size()-1) {
-                p_total[caseLabel] += 1.0f;
-
-                if (chunk_a.DEP_HEAD != chunk_p.INDEX && chunk_p.DEP_HEAD != chunk_a.INDEX)
-                    p_zero[caseLabel] += 1.0f;
-
-                if (oracleArgIndex == systemArgIndex) {
-                    correct[caseLabel] += 1.0f;
-                    if (systemArgIndex == zeroArg)
-                        correct_zero[caseLabel] += 1.0f;
-                }
-                
-            }
-        }
-    }
-    
-    final public void test(ArrayList<Sentence> sents, Parser parser, int restart, boolean isAvgWeight){
-        this.parser = new HillClimbingParser(nCases);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sents = sents;
-        this.parser.perceptron.feature.weightSize = parser.perceptron.weight.length;
-        this.parser.hasCache = false;
-        this.parser.rnd = parser.rnd;        
-
-        if (isAvgWeight)
-            this.parser.perceptron.weight = getAvgWeight(parser);            
-        else
-            this.parser.perceptron.weight = parser.perceptron.weight;
-        
-        time = (long) 0.0;
-
-        for (int i=0; i<sents.size(); i++){
-            Sentence sent = sents.get(i);
-            int nArgs = sent.argIndices.size();
-            int nPrds = sent.prdIndices.size();
-            this.parser.perceptron.feature.cache = new ArrayList[nCases][nCases][nPrds][nArgs][nPrds][nArgs];
-
-            if (!sent.hasPrds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            int[][] graph = this.parser.decode(sent, restart, true);
-            time += System.currentTimeMillis() - time1;
-            
-            this.setEval(sent, graph);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
-        }
-    }    
-    
-
-    final public void test(ArrayList<Sentence> sents, Parser parser, boolean isAvgWeight){
-        this.parser = new BaselineParser(nCases);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sents = sents;
-        this.parser.perceptron.feature.weightSize = parser.perceptron.weight.length;
-        this.parser.hasCache = false;
-
-        if (isAvgWeight)
-            this.parser.perceptron.weight = getAvgWeight(parser);            
-        else
-            this.parser.perceptron.weight = parser.perceptron.weight;
-        
-        time = (long) 0.0;
-
-        for (int i=0; i<sents.size(); i++){
-            Sentence sent = sents.get(i);
-
-            if (!sent.hasPrds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            int[][] graph = this.parser.decode(sent);
-            time += System.currentTimeMillis() - time1;
-            
-            setWordEval(sent, graph);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
-        }
-    }
-    
-
-    final public void testAndOutput(ArrayList<Sentence> sents, Parser parser, int restart, String fn,
-                                      boolean isModelFile, boolean isAvgWeight) throws IOException{
-        this.parser = new Parser(nCases);
-        this.parser.perceptron.feature = parser.perceptron.feature;
-        this.parser.perceptron.feature.sents = sents;
-        this.parser.hasCache = false;
-        this.parser.rnd = parser.rnd;
-
-        if (isAvgWeight) {
-            this.parser.perceptron.weight = getAvgWeight(parser);            
-        }
-        else {
-            this.parser.perceptron.weight = parser.perceptron.weight;
-        }
-        
-        time = (long) 0.0;
-
-        Sentence sentence;
-        int[][][] graph = new int[sents.size()][][];
-        int args_length;
-        int prds_length;
-        
-        for (int i=0; i<sents.size(); i++){
-            sentence = sents.get(i);
-            args_length = sentence.argIndices.size();
-            prds_length = sentence.prdIndices.size();
-            graph[i] = new int[prds_length][nCases];
-            this.parser.perceptron.feature.cache =
-                new ArrayList[nCases][nCases][prds_length]
-                             [args_length][prds_length][args_length];
-
-            if (!sentence.hasPrds) {
-                if (i%1000 == 0 && i != 0)
-                    System.out.print(String.format("%d ", i));
-                continue;
-            }
-
-            long time1 = System.currentTimeMillis();
-            graph[i] = this.parser.decode(sentence, restart, true);
-            time += System.currentTimeMillis() - time1;
-
-            this.setEval(sentence, graph[i]);
-
-            if (i%1000 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));
-        }
-        
-        this.parser.perceptron.feature.cache = null;
-        this.parser.perceptron.cacheFeats = null;
-        outputText(fn, sents, graph);
-        if (isModelFile)
-            outputPerceptron(fn);
-    }    
-
-    
-    final public void outputPerceptron(String fn){
-        try {      
-            try (ObjectOutputStream objOutStream =
-                    new ObjectOutputStream(
-                        new FileOutputStream(fn+"_perceptron.bin"))) {
-                        objOutStream.writeObject(this.parser.perceptron);
-                        objOutStream.close();
-            }
-      
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+                correct[INTRA_ZERO] += 1;
     }
 
-    
-    final public void outputText(String fn, List<Sentence> sentencelist,
-                                  int[][][] graph) throws IOException {
-        
-        PrintWriter pw = new PrintWriter(new BufferedWriter
-                                        (new FileWriter(fn+".ntc")));
-        
-        int[] null_case =new int[nCases];
-        for (int i=0; i<nCases; i++)
-            null_case[i] = -1;
-        
-        for (int i=0; i<sentencelist.size(); ++i) {
-            Sentence sentence = sentencelist.get(i);
-            ArrayList<Chunk> chunks = sentence.chunks;
-            
-            pw.println("#");
-
-            int prd_i = 0;
-            for (int j=0; j<sentence.sizeChunks()-1; ++j) {
-                Chunk c = chunks.get(j);
-
-                int[] predicted_case;                
-                if (c.hasPrd) {
-                    predicted_case = graph[i][prd_i];
-                    prd_i++;
-                }
-                else {                     
-                    predicted_case = null_case;
-                }
-                
-                for (int k=0; k<predicted_case.length; ++k) {
-                    if (predicted_case[k] == sentence.sizeChunks() - 1)
-                        predicted_case[k] = -1;
-                }
-                                
-                String text = String.format("* %d %d | Gold: %s %s %s %s %s %s | System: %s",
-                                            c.INDEX, c.DEP_HEAD,
-                                            Integer.toString(c.ga),
-                                            Integer.toString(c.o),
-                                            Integer.toString(c.ni),
-                                            Integer.toString(c.zeroGa),
-                                            Integer.toString(c.zeroO),
-                                            Integer.toString(c.zeroNi),
-                                            Arrays.toString(predicted_case));
-                pw.println(text);           
-                
-                for (int k=0; k<c.words.size(); ++k) {
-                    Word t = (Word) c.words.get(k);
-                    text = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
-                                        t.FORM, t.PRON, t.REG, t.CPOS,
-                                        t.POS, t.INF_TYPE, t.INFL, t.PAS);
-                    pw.println(text);                    
-                }
-            }
-            
-            pw.println("EOS");
-            
-        }
-        pw.close();
+    private boolean hasDep(Chunk prd, Chunk arg) {
+        return prd.INDEX == arg.DEP_HEAD || prd.DEP_HEAD == arg.INDEX;
     }
-
+    
     private float[] getAvgWeight(Parser parser){
         Perceptron p = parser.perceptron;
         float[] avgWeight = new float[p.weight.length];

@@ -84,7 +84,7 @@ public class Config {
     }
     
     final public int getIteration() {
-        return optionparser.getInt("iter", 50);
+        return optionparser.getInt("iter", 10);
     }
 
     final public int getRestart() {

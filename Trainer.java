@@ -20,41 +20,64 @@ public class Trainer {
         preprocessor = new Preprocessor();
     }
     
-    final public void train(Parser parser,
-                             ArrayList<Sentence> trainCorpus,
-                             ArrayList<Sentence> testCorpus) {
+    final public void train(Parser parser, ArrayList<Sentence> trainCorpus, ArrayList<Sentence> testCorpus) {
         System.out.println("\n\nTRAINING START");
         
         Sample[] trainSamples = createSamples(trainCorpus);
         Sample[] testSamples = createSamples(testCorpus);
 
-        preprocessor.showStats(trainSamples);
+        showStats(trainSamples);
+        showStats(testSamples);
 
         setOracleFeatIDs(trainSamples, parser.featExtractor);
 
         for (int i=0; i<ITERATION; i++) {
-            System.out.println(String.format("\nIteration %d: ", i+1));                
+            System.out.println(String.format("\n\nIteration %d: ", i+1));                
             long time1 = System.currentTimeMillis();
             trainEachEpoch(parser, trainSamples);
             long time2 = System.currentTimeMillis();
-            System.out.println("\tTime: " + (time2-time1) + " ms");
+            System.out.println("Time: " + (time2-time1) + " ms\n");
+            
+            predict(parser, testSamples);
         }
     }
     
     private void trainEachEpoch(Parser parser, Sample[] samples) {
-        parser.evaluator = new Evaluator(parser.nCases);
+        System.out.println("TRAIN SAMPLE");
+        parser.evaluator = new Evaluator();
+
         for(int index=0; index<samples.length; ++index){
             if ((index+1) % 100 == 0)
                 System.out.print(String.format("%d ", index+1));
 
             Sample sample = samples[index];
 
-            if (sample.prds.length == 0) {
+            if (sample.prds.length == 0)
                 continue;
-            }            
+
             parser.train(sample);            
         }
-        parser.evaluator.showAccuracy();
+        parser.evaluator.show();
+    }
+    
+    private void predict(Parser parser, Sample[] samples) {
+        System.out.println("TEST SAMPLE");
+        parser.evaluator = new Evaluator();
+
+        for(int index=0; index<samples.length; ++index){
+            if ((index+1) % 100 == 0)
+                System.out.print(String.format("%d ", index+1));
+
+            Sample sample = samples[index];
+
+            if (sample.prds.length == 0)
+                continue;
+
+            int[][] bestGraph = parser.predict(sample);
+            parser.evaluator.update(sample, sample.oracleGraph, bestGraph);
+        }
+        parser.evaluator.show();
+        
     }
 
     private Sample[] createSamples(ArrayList<Sentence> corpus) {
@@ -64,6 +87,10 @@ public class Trainer {
     private void setOracleFeatIDs(Sample[] samples, FeatureExtractor featExtractor) {
         for (int i=0; i<samples.length; ++i)
             samples[i].setOracleFeatIDs(featExtractor);
+    }
+    
+    private void showStats(Sample[] samples) {
+        preprocessor.showStats(samples);        
     }
 
 }

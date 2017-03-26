@@ -33,11 +33,17 @@ public class Parser {
 
         int[][] oracleGraph = sample.oracleGraph;
         int[][] bestGraph = graph.bestGraph;
-        evaluator.updataAccuracy(oracleGraph, bestGraph);
+        evaluator.update(sample, oracleGraph, bestGraph);
 
         int[] oracleFeatIDs = getOracleGraphFeatIDs(sample);
         int[] systemFeatIDs = extractBestGraphFeatIDs(graph);
         perceptron.updateWeights(oracleFeatIDs, systemFeatIDs);
+    }
+    
+    public int[][] predict(Sample sample) {
+        Graph graph = decode(sample);
+        graph.setBestGraph();
+        return graph.bestGraph;
     }
     
     private int[] getOracleGraphFeatIDs(Sample sample) {
@@ -60,13 +66,9 @@ public class Parser {
     public Graph decode(Sample sample) {
         return null;
     }
-
+    
     public ArrayList getFeature(Sentence sent, int[][] oracleGraph){
         return new ArrayList();
-    }
-
-    final public int[] extractUnlabeledFeatIDs(Sample sample, Chunk prd, Chunk arg) {
-        return featExtractor.extractUnlabeledFeatIDs(sample, prd, arg);
     }
 
     final public int[] extractLabeledFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
