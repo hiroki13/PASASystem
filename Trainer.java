@@ -12,8 +12,8 @@ import java.util.ArrayList;
 
 public class Trainer {
 
-    final int ITERATION;
-    final Preprocessor preprocessor;
+    final private int ITERATION;
+    final private Preprocessor preprocessor;
 
     Trainer(int iteration) {
         ITERATION = iteration;
@@ -38,7 +38,11 @@ public class Trainer {
             long time2 = System.currentTimeMillis();
             System.out.println("Time: " + (time2-time1) + " ms\n");
             
+            float[] weight = parser.perceptron.weight;
+            float[] avgWeight = parser.perceptron.getAvgWeight();
+            parser.perceptron.weight = avgWeight;
             predict(parser, testSamples);
+            parser.perceptron.weight = weight;
         }
     }
     
@@ -47,7 +51,7 @@ public class Trainer {
         parser.evaluator = new Evaluator();
 
         for(int index=0; index<samples.length; ++index){
-            if ((index+1) % 100 == 0)
+            if ((index+1) % 1000 == 0)
                 System.out.print(String.format("%d ", index+1));
 
             Sample sample = samples[index];
@@ -65,7 +69,7 @@ public class Trainer {
         parser.evaluator = new Evaluator();
 
         for(int index=0; index<samples.length; ++index){
-            if ((index+1) % 100 == 0)
+            if ((index+1) % 1000 == 0)
                 System.out.print(String.format("%d ", index+1));
 
             Sample sample = samples[index];

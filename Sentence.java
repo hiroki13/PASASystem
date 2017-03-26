@@ -63,20 +63,6 @@ public class Sentence implements Serializable{
         
     }
 
-    private int[] setArgIndices() {
-        int[] argIndices = new int[chunks.length];
-        for (int i=0; i<this.sizeChunks(); ++i)
-            argIndices[i] = i;
-        return argIndices;
-    }
-    
-    private int[] setPrdIndices() {
-        int[] prdIndices = new int[prds.length];
-        for (int i=0; i<prds.length; ++i)
-            prdIndices[i] = prds[i].INDEX;
-        return prdIndices;
-    }
-    
     private boolean setHasPrds() {
         return prds.length > 0;
     }
@@ -87,15 +73,6 @@ public class Sentence implements Serializable{
             if (word.IS_PRD)
                 word.setArgIndices(this);
         }
-    }
-    
-    final public boolean hasDepCicle() {                    
-        for (int i=0; i<chunks.length; ++i) {
-            Chunk chunk = chunks[i];
-            if (chunk.INDEX == chunk.DEP_HEAD)
-                return true;                
-        }
-        return false;
     }
     
     final public Chunk getChunk(int index) {

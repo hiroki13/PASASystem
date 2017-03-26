@@ -157,6 +157,29 @@ public class Sample {
         }
     }
     
+    private void setNullDepPaths() {
+        for (int prdIndex=0; prdIndex<prds.length; ++prdIndex) {
+            for (int argIndex=0; argIndex<args.length; ++argIndex) {
+                depDist[prdIndex][argIndex] = 0;
+                depPath[prdIndex][argIndex] = "NULL";
+                depPosPath[prdIndex][argIndex] = "NULL";
+                depVerbPath[prdIndex][argIndex] = "NULL";
+                depRformPath[prdIndex][argIndex] = "NULL";
+                depAuxPath[prdIndex][argIndex] = "NULL";
+                depJoshiPath[prdIndex][argIndex] = "NULL";
+            }
+        }
+    }
+
+    private boolean hasDepCicle() {                    
+        for (int i=0; i<args.length; ++i) {
+            Chunk chunk = args[i];
+            if (chunk.INDEX == chunk.DEP_HEAD)
+                return true;                
+        }
+        return false;
+    }
+    
     private ArrayList<Integer> getDepPath(Chunk prd, Chunk arg) {
         int prdIndex = prd.INDEX;
         int argIndex = arg.INDEX;
@@ -184,6 +207,11 @@ public class Sample {
         }
 
         Chunk chunk = args[chunkIndex];
+        if (path.contains(chunk.INDEX)) {
+            ArrayList<Integer> NULL = new ArrayList();
+            NULL.add(-1);
+            return NULL;            
+        }
         path.add(chunk.INDEX);
 
         if (chunk.DEP_HEAD < 0)
@@ -208,6 +236,9 @@ public class Sample {
                 }
             }
         }
+        
+        if (root.isEmpty())
+            root.add(NULL_ARG_INDEX);
         return root;
     }
     

@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class FeatureExtractor implements Serializable{
     final public int nCases = Config.N_CASES;
 //    final public static int SIZE = (int) Math.pow(2, 23);
-    public static int SIZE = 100000;
+    public static int SIZE = Config.WEIGHT_SIZE;
     final public static int N_FEATS = 42;
     
     public FeatureExtractor() {}

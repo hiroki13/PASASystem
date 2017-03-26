@@ -31,7 +31,6 @@ public class Reader {
         ArrayList<Word> words = new ArrayList();
         int sentIndex = 0, wordIndex = 0, chunkIndex = -1, chunkHead = -1;
 
-//        Sentence sent = new Sentence(sentIndex++);
         ArrayList<Chunk> chunks = new ArrayList();
         BufferedReader br = getFile(fn);
 
@@ -40,11 +39,12 @@ public class Reader {
                 chunks.add(new Chunk(chunkIndex, chunkHead, words));
                 corpus.add(new Sentence(sentIndex++, chunks));
                         
-                if (corpus.size() == 1000) break;
+                if (corpus.size() == 1000000)
+                    break;
 
                 chunks = new ArrayList();
-                wordIndex = 0;
                 words = new ArrayList();
+                wordIndex = 0;
             }
             else if (line.startsWith("*")) {
                 if (words.size() > 0)

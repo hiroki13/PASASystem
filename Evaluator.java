@@ -183,13 +183,5 @@ public class Evaluator {
     private boolean hasDep(Chunk prd, Chunk arg) {
         return prd.INDEX == arg.DEP_HEAD || prd.DEP_HEAD == arg.INDEX;
     }
-    
-    private float[] getAvgWeight(Parser parser){
-        Perceptron p = parser.perceptron;
-        float[] avgWeight = new float[p.weight.length];
-        for (int i=0; i<p.weight.length; ++i)
-            avgWeight[i] = p.weight[i] - p.aweight[i] /p.t;
-        return avgWeight;
-    }
-    
+        
 }

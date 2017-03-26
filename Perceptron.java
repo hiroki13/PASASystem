@@ -13,12 +13,13 @@ import java.io.Serializable;
 
 public class Perceptron implements Serializable{
     public float[] weight;
-    public float[] aweight;
-    public float t = 1.0f;
+    public float[] averagedWeight;
+    public float step;
 
     public Perceptron(int weightSize){
         this.weight = new float[weightSize];
-        this.aweight = new float[weightSize];
+        this.averagedWeight = new float[weightSize];
+        this.step = 1.0f;
     }
     
     public Perceptron() {}
@@ -34,16 +35,23 @@ public class Perceptron implements Serializable{
         for (int i=0; i<oraclePhi.length; ++i) {
             int phiId = oraclePhi[i];
             this.weight[phiId] += 1.0f;
-            this.aweight[phiId] += this.t;
+            this.averagedWeight[phiId] += this.step;
         }
         
         for (int i=0; i<systemPhi.length; ++i) {
             int phiId = systemPhi[i];
             this.weight[phiId] -= 1.0f;
-            this.aweight[phiId] -= this.t;
+            this.averagedWeight[phiId] -= this.step;
         }
         
-        this.t += 1.0f;
+        this.step += 1.0f;
     }
-    
+
+    final public float[] getAvgWeight(){
+        float[] avgWeight = new float[weight.length];
+        for (int i=0; i<weight.length; ++i)
+            avgWeight[i] = weight[i] - averagedWeight[i] / step;
+        return avgWeight;
+    }
+
 }

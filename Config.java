@@ -9,14 +9,15 @@
  * @author hiroki
  */
 public class Config {
+    final static int N_CASES = 3;
+    final static int WEIGHT_SIZE = (int) Math.pow(2, 23);
 
     final OptionParser optionparser;
-    final static int N_CASES = 3;
     final String MODE;
     final String PARSER_TYPE;    
     final String TRAIN_FILE_PATH, TEST_FILE_PATH;
     final String OUTPUT_FILE_NAME, MODEL_FILE_NAME;
-    final int ITERATION, RESTART, RND_SEED, WEIGHT_SIZE;
+    final int ITERATION, RESTART, RND_SEED;
 
     public Config(String[] args) {
         optionparser = new OptionParser(args);
@@ -32,7 +33,6 @@ public class Config {
         ITERATION = getIteration();
         RESTART = getRestart();
         RND_SEED = getRndSeed();
-        WEIGHT_SIZE = getWeightSize();        
     }
 
     final public String getModeSelect() {
@@ -96,7 +96,7 @@ public class Config {
     }
 
     final public int getWeightSize() {
-        return optionparser.getInt("weight", 100000);
+        return optionparser.getInt("weight", 10000000);
     }
 
 }
