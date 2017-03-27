@@ -16,12 +16,13 @@ import java.util.ArrayList;
  */
 
 public class Reader {
+
     final private String SPACE = " ";
     final private String EOS = "EOS";
     
     public Reader() {}
     
-    final public ArrayList<Sentence> read(String fn) throws Exception{
+    final public ArrayList<Sentence> read(String fn, int dataSize) throws Exception{
         ArrayList<Sentence> corpus = new ArrayList();
 
         if (fn == null)
@@ -39,7 +40,7 @@ public class Reader {
                 chunks.add(new Chunk(chunkIndex, chunkHead, words));
                 corpus.add(new Sentence(sentIndex++, chunks));
                         
-                if (corpus.size() == 1000000)
+                if (corpus.size() == dataSize)
                     break;
 
                 chunks = new ArrayList();

@@ -12,9 +12,9 @@ import java.io.Serializable;
  */
 
 public class FeatureExtractor implements Serializable{
-    final public int nCases = Config.N_CASES;
-//    final public static int SIZE = (int) Math.pow(2, 23);
-    public static int SIZE = Config.WEIGHT_SIZE;
+
+    final private int nCases = Config.N_CASES;
+    final private static int SIZE = Config.WEIGHT_SIZE;
     final public static int N_FEATS = 42;
     
     public FeatureExtractor() {}
@@ -92,6 +92,24 @@ public class FeatureExtractor implements Serializable{
         return featIDs;
     }
     
+    final public int[] extractLabeledFeatIDs(Sample sample, Chunk[] prds, Chunk[] args, int[] caseLabels) {
+        Chunk prd1 = prds[0];
+        Chunk prd2 = prds[1];
+        Chunk arg1 = args[0];
+        Chunk arg2 = args[1];
+        int caseLabel1 = caseLabels[0];
+        int caseLabel2 = caseLabels[1];
+
+        int[] featIDs = {
+                Template.gen(Template.JOINT_PPAA_REG.hash,
+                             prd1.regform.hashCode(), prd2.regform.hashCode(),
+                             arg1.regform.hashCode(), arg2.regform.hashCode(),
+                             caseLabel1, caseLabel2),
+        };
+        
+        return featIDs;
+    }
+
     final public int[] extractOracleFeatIDs(Sample sample) {
         int[] featIDs = new int[sample.prds.length * nCases * N_FEATS];
 
@@ -166,6 +184,8 @@ public class FeatureExtractor implements Serializable{
         DEP_PATH_PRD_ARG("dep:path:prd:arg"),
         DEP_VERBPATH_PRD_ARG("dep:verb:path:prd:arg"),
         DEP_RFORMPATH_PRD_ARG("dep:rform:path:prd:arg"),
+
+        JOINT_PPAA_REG("joint:ppaa:reg"),
         ;
 
         private final String label;

@@ -12,6 +12,7 @@ import java.util.ArrayList;
  */
 
 public class Sentence implements Serializable{
+
     final public int INDEX;
     final public Word[] words;
     final public Chunk[] chunks, prds;

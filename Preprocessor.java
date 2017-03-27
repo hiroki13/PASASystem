@@ -13,15 +13,15 @@ import java.util.ArrayList;
  */
 public class Preprocessor {
 
-    final Reader reader;
-    final int N_CASES = Config.N_CASES;
+    final private Reader reader;
+    final private int N_CASES = Config.N_CASES;
 
     public Preprocessor() {
         reader = new Reader();
     }
 
-    public ArrayList<Sentence> loadCorpus(String fn) throws Exception {
-        return reader.read(fn);
+    public ArrayList<Sentence> loadCorpus(String fn, int dataSize) throws Exception {
+        return reader.read(fn, dataSize);
     }
     
     public Sample[] createSamples(ArrayList<Sentence> corpus) {

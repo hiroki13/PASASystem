@@ -15,43 +15,39 @@ import java.util.ArrayList;
 
 public class App {
     
-    final Config config;
-    final Preprocessor preprocessor;
-    Perceptron perceptron;
-    
+    final private Config config;
+    final private Preprocessor preprocessor;    
     
     public App(String[] args) {
         config = new Config(args);
         preprocessor = new Preprocessor();
     }
 
-    public void main() throws Exception{
+    public void main() throws Exception {
         System.out.println("Cases to be analyzed: " + Config.N_CASES);
 
-        ArrayList<Sentence> trainCorpus = preprocessor.loadCorpus(config.TRAIN_FILE_PATH);
-        ArrayList<Sentence> testCorpus = preprocessor.loadCorpus(config.TEST_FILE_PATH);
+        ArrayList<Sentence> trainCorpus = loadCorpus(config.TRAIN_FILE_PATH, config.DATA_SIZE);
+        ArrayList<Sentence> testCorpus = loadCorpus(config.TEST_FILE_PATH, config.DATA_SIZE);
 
         switch (config.MODE) {
             case "train":
                 train(trainCorpus, testCorpus);
-                break;
             case "test":
                 System.out.println("Test Sents: " + testCorpus.size());
                 System.out.println("Model Loaded...");
                 ObjectInputStream perceptronStream
                         = new ObjectInputStream(new FileInputStream(config.MODEL_FILE_NAME));
-                perceptron = (Perceptron) perceptronStream.readObject();
+                Perceptron perceptron = (Perceptron) perceptronStream.readObject();
                 perceptronStream.close();
                 System.out.println("Model Loading Completed\n");
-                test();
-                break;
+                test(perceptron);
         }
     }
     
     private Parser selectParser() {
         if ("baseline".equals(config.PARSER_TYPE))
-            return new BaselineParser(config.WEIGHT_SIZE);
-        return new HillClimbingParser(config.WEIGHT_SIZE, config.RND_SEED);        
+            return new BaselineParser();
+        return new HillClimbingParser(config.RESTART, config.RND_SEED);        
     }
     
     private void train(ArrayList<Sentence> trainCorpus, ArrayList<Sentence> testCorpus) {            
@@ -66,11 +62,15 @@ public class App {
 
     }
     
-    private void test() throws IOException{
-        Parser parser = new HillClimbingParser(config.N_CASES, config.RESTART, config.RND_SEED);
+    private void test(Perceptron perceptron) throws IOException{
+        Parser parser = new HillClimbingParser(config.RESTART, config.RND_SEED);
         parser.perceptron = perceptron;
 
         System.out.println("TEST START");                
+    }
+    
+    private ArrayList<Sentence> loadCorpus(String fn, int dataSize) throws Exception {
+        return preprocessor.loadCorpus(fn, dataSize);
     }
             
 }

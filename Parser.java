@@ -13,23 +13,16 @@ import java.util.ArrayList;
 
 public class Parser {
 
-    final public int nCases = Config.N_CASES;
+    final public int N_CASES = Config.N_CASES;
 
     public Perceptron perceptron;
     public FeatureExtractor featExtractor;
     public Evaluator evaluator;
 
-    public boolean hasCache = false;
-    public ArrayList[][][] tmpCache;
-    public ArrayList<Integer> bestPhi;
-
     public Parser() {}
 
-    public Parser(int rndSeed) {}
-
-    public void train(Sample sample) {
+    final public void train(Sample sample) {
         Graph graph = decode(sample);
-        graph.setBestGraph();
 
         int[][] oracleGraph = sample.oracleGraph;
         int[][] bestGraph = graph.bestGraph;
@@ -40,9 +33,8 @@ public class Parser {
         perceptron.updateWeights(oracleFeatIDs, systemFeatIDs);
     }
     
-    public int[][] predict(Sample sample) {
+    final public int[][] predict(Sample sample) {
         Graph graph = decode(sample);
-        graph.setBestGraph();
         return graph.bestGraph;
     }
     

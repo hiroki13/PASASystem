@@ -17,7 +17,7 @@ public class Config {
     final String PARSER_TYPE;    
     final String TRAIN_FILE_PATH, TEST_FILE_PATH;
     final String OUTPUT_FILE_NAME, MODEL_FILE_NAME;
-    final int ITERATION, RESTART, RND_SEED;
+    final int DATA_SIZE, ITERATION, RESTART, RND_SEED;
 
     public Config(String[] args) {
         optionparser = new OptionParser(args);
@@ -29,7 +29,8 @@ public class Config {
         TEST_FILE_PATH = getTestFilePath(MODE);
         OUTPUT_FILE_NAME = getOutputFileName();
         MODEL_FILE_NAME = getModelFileName();
-        
+
+        DATA_SIZE = getDataSize();
         ITERATION = getIteration();
         RESTART = getRestart();
         RND_SEED = getRndSeed();
@@ -95,8 +96,8 @@ public class Config {
         return optionparser.getInt("rnd", 0);
     }
 
-    final public int getWeightSize() {
-        return optionparser.getInt("weight", 10000000);
+    final public int getDataSize() {
+        return optionparser.getInt("data_size", 1000);
     }
 
 }

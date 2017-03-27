@@ -17,16 +17,11 @@ public class BaselineParser extends Parser{
         this.featExtractor = new FeatureExtractor();
     }
 
-    public BaselineParser(int weightSize) {
-        this.perceptron = new Perceptron(weightSize);
-        this.featExtractor = new FeatureExtractor();
-    }
-
     @Override
     final public Graph decode(Sample sample) {
         int nPrds = sample.prds.length;
         int nArgs = sample.args.length;
-        Graph graph = new Graph(nPrds, nArgs, nCases);
+        BaseGraph graph = new BaseGraph(nPrds, nArgs, N_CASES);
 
         for (int prdIndex=0; prdIndex<nPrds; ++prdIndex) {
             Chunk prd = sample.prds[prdIndex];
@@ -34,7 +29,7 @@ public class BaselineParser extends Parser{
             for (int argIndex=0; argIndex<nArgs; ++argIndex) {
                 Chunk arg = sample.args[argIndex];                
 
-                for (int caseLabel=0; caseLabel<nCases; caseLabel++) {
+                for (int caseLabel=0; caseLabel<N_CASES; caseLabel++) {
                     int [] labeledFeatIDs = extractLabeledFeatIDs(sample, prd, arg, prdIndex, caseLabel);
                     float score = calcScore(labeledFeatIDs);                    
                     graph.addFeatIDs(labeledFeatIDs, prdIndex, argIndex, caseLabel);
@@ -43,6 +38,7 @@ public class BaselineParser extends Parser{
             }
         }
                 
+        graph.setBestGraph();
         return graph;
     }
             

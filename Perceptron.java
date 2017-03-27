@@ -12,18 +12,17 @@ import java.io.Serializable;
  */
 
 public class Perceptron implements Serializable{
+    final private int WEIGHT_SIZE = Config.WEIGHT_SIZE;
     public float[] weight;
     public float[] averagedWeight;
     public float step;
 
-    public Perceptron(int weightSize){
-        this.weight = new float[weightSize];
-        this.averagedWeight = new float[weightSize];
+    public Perceptron(){
+        this.weight = new float[WEIGHT_SIZE];
+        this.averagedWeight = new float[WEIGHT_SIZE];
         this.step = 1.0f;
     }
     
-    public Perceptron() {}
-
     final public float calcScore(int[] featIDs) {
         float score = 0.0f;
         for(int i=0; i<featIDs.length; ++i)
