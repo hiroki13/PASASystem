@@ -32,6 +32,7 @@ public class App {
         switch (config.MODE) {
             case "train":
                 train(trainCorpus, testCorpus);
+                break;
             case "test":
                 System.out.println("Test Sents: " + testCorpus.size());
                 System.out.println("Model Loaded...");
@@ -41,6 +42,7 @@ public class App {
                 perceptronStream.close();
                 System.out.println("Model Loading Completed\n");
                 test(perceptron);
+                break;
         }
     }
     

@@ -51,7 +51,7 @@ public class Trainer {
         parser.evaluator = new Evaluator();
 
         for(int index=0; index<samples.length; ++index){
-            if ((index+1) % 1000 == 0)
+            if ((index+1) % 10 == 0)
                 System.out.print(String.format("%d ", index+1));
 
             Sample sample = samples[index];

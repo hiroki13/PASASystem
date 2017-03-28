@@ -16,6 +16,7 @@ public class FeatureExtractor implements Serializable{
     final private int nCases = Config.N_CASES;
     final private static int SIZE = Config.WEIGHT_SIZE;
     final public static int N_FEATS = 42;
+    final public static int N_JOINT_FEATS = 1;
     
     public FeatureExtractor() {}
     
@@ -92,7 +93,7 @@ public class FeatureExtractor implements Serializable{
         return featIDs;
     }
     
-    final public int[] extractLabeledFeatIDs(Sample sample, Chunk[] prds, Chunk[] args, int[] caseLabels) {
+    final public int[] extractGlobalFeatIDs(Sample sample, Chunk[] prds, Chunk[] args, int[] caseLabels) {
         Chunk prd1 = prds[0];
         Chunk prd2 = prds[1];
         Chunk arg1 = args[0];
@@ -125,6 +126,48 @@ public class FeatureExtractor implements Serializable{
         }
 
         return featIDs;
+    }
+
+    final public int[] getFeatIDs(int[][] graph, ScoreTable scoreTable) {
+        int nPrds = graph.length;
+        int[] featIDs = new int[combination(nPrds * nCases) * N_FEATS * 2];
+//        int[] featIDs = new int[combination(nPrds * nCases) * N_JOINT_FEATS];
+        int count = 0;
+
+        for (int prdIndex1=0; prdIndex1<nPrds; ++prdIndex1) {
+            int[] tmpGraph1 = graph[prdIndex1];
+            int[][][][][][] scores1 = scoreTable.featIDs[prdIndex1];
+
+            for (int caseLabel1=0; caseLabel1<nCases; ++caseLabel1) {
+                int argIndex1 = tmpGraph1[caseLabel1];
+                int[][][][] scores2 = scores1[argIndex1][caseLabel1];
+
+                for (int prdIndex2=prdIndex1; prdIndex2<nPrds; ++prdIndex2) {
+                    int[] tmpGraph2 = graph[prdIndex2];
+                    int[][][] scores3 = scores2[prdIndex2];
+                    
+                    int initCaseLabel = 0;
+                    if (prdIndex1 == prdIndex2)
+                        initCaseLabel = caseLabel1+1;
+
+                    for (int caseLabel2=initCaseLabel; caseLabel2<nCases; ++caseLabel2) {
+                        int argIndex2 = tmpGraph2[caseLabel2];
+                        int[] tmpFeatIDs = scores3[argIndex2][caseLabel2];
+//                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_JOINT_FEATS, N_JOINT_FEATS);
+                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_FEATS*2, tmpFeatIDs.length);
+                        count++;
+                    }
+                }
+            }
+        }
+        return featIDs;
+    }
+
+    private int combination(int n) {
+        int sum = 1;
+        for (int i=n; i>n-2; --i)
+            sum *= i;
+        return sum / 2;
     }
 
     private enum Template {
