@@ -47,7 +47,7 @@ public class App {
     }
     
     private Parser selectParser() {
-        if ("baseline".equals(config.PARSER_TYPE))
+        if ("base".equals(config.PARSER_TYPE))
             return new BaselineParser();
         return new HillClimbingParser(config.RESTART, config.RND_SEED);        
     }

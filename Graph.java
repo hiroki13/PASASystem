@@ -20,4 +20,14 @@ public class Graph {
     public Graph() {}
     
     public void setBestGraphFeatIDs() {}
+
+    final public static boolean isEqualGraph(int[][] graph1, int[][] graph2) {
+        for (int i=0; i<graph1.length; ++i)
+            for (int j=0; j<graph1[i].length; ++j)
+                if (graph1[i][j] != graph2[i][j])
+                    return false;
+        return true;
+    }
+        
+
 }

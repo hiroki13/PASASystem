@@ -111,7 +111,7 @@ public class Sample {
     }
     
     final public void setOracleFeatIDs(FeatureExtractor featExtractor) {
-        oracleFeatIDs = featExtractor.extractOracleFeatIDs(this);
+        oracleFeatIDs = featExtractor.getOracleFeatIDs(this);
     }
     
     final public int sizeArgs() {

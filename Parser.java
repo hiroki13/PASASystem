@@ -63,7 +63,7 @@ public class Parser {
         return new ArrayList();
     }
 
-    final public int[] extractLabeledFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
+    final public int[] extractLocalFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
         return featExtractor.extractLabeledFeatIDs(sample, prd, arg, prdIndex, caseLabel);
     }
 

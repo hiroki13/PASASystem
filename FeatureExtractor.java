@@ -16,7 +16,7 @@ public class FeatureExtractor implements Serializable{
     final private int nCases = Config.N_CASES;
     final private static int SIZE = Config.WEIGHT_SIZE;
     final public static int N_FEATS = 42;
-    final public static int N_JOINT_FEATS = 1;
+    final public static int N_GLOBAL_FEATS = 1;
     
     public FeatureExtractor() {}
     
@@ -111,7 +111,7 @@ public class FeatureExtractor implements Serializable{
         return featIDs;
     }
 
-    final public int[] extractOracleFeatIDs(Sample sample) {
+    final public int[] getOracleFeatIDs(Sample sample) {
         int[] featIDs = new int[sample.prds.length * nCases * N_FEATS];
 
         for (int prdIndex=0; prdIndex<sample.prds.length; ++prdIndex) {
@@ -128,15 +128,30 @@ public class FeatureExtractor implements Serializable{
         return featIDs;
     }
 
-    final public int[] getFeatIDs(int[][] graph, ScoreTable scoreTable) {
+    final public int[] getLocalFeatIDs(int[][] graph, ScoreTable scoreTable) {
+        int[] featIDs = new int[graph.length * nCases * N_FEATS];
+
+        for (int prdIndex=0; prdIndex<graph.length; ++prdIndex) {
+            int[] argIndices = graph[prdIndex];
+            
+            for (int caseLabel=0; caseLabel<argIndices.length; ++caseLabel) {
+                int argIndex = argIndices[caseLabel];
+                int[] tmpFeatIDs = scoreTable.localFeatIDs[prdIndex][argIndex][caseLabel];
+                System.arraycopy(tmpFeatIDs, 0, featIDs, (prdIndex*nCases+caseLabel)*N_FEATS, N_FEATS);
+            }
+        }
+
+        return featIDs;
+    }
+
+    final public int[] getGlobalFeatIDs(int[][] graph, ScoreTable scoreTable) {
         int nPrds = graph.length;
-        int[] featIDs = new int[combination(nPrds * nCases) * N_FEATS * 2];
-//        int[] featIDs = new int[combination(nPrds * nCases) * N_JOINT_FEATS];
+        int[] featIDs = new int[combination(nPrds * nCases) * N_GLOBAL_FEATS];
         int count = 0;
 
         for (int prdIndex1=0; prdIndex1<nPrds; ++prdIndex1) {
             int[] tmpGraph1 = graph[prdIndex1];
-            int[][][][][][] scores1 = scoreTable.featIDs[prdIndex1];
+            int[][][][][][] scores1 = scoreTable.globalFeatIDs[prdIndex1];
 
             for (int caseLabel1=0; caseLabel1<nCases; ++caseLabel1) {
                 int argIndex1 = tmpGraph1[caseLabel1];
@@ -153,8 +168,7 @@ public class FeatureExtractor implements Serializable{
                     for (int caseLabel2=initCaseLabel; caseLabel2<nCases; ++caseLabel2) {
                         int argIndex2 = tmpGraph2[caseLabel2];
                         int[] tmpFeatIDs = scores3[argIndex2][caseLabel2];
-//                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_JOINT_FEATS, N_JOINT_FEATS);
-                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_FEATS*2, tmpFeatIDs.length);
+                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_GLOBAL_FEATS, N_GLOBAL_FEATS);
                         count++;
                     }
                 }

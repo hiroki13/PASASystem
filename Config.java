@@ -80,7 +80,7 @@ public class Config {
     final public String getParserType() {
         String fn = optionparser.getString("parser");
         if (fn == null)
-            fn = "baseline";
+            fn = "base";
         return fn;
     }
     
