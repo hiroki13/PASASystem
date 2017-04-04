@@ -16,11 +16,11 @@ public class FeatureExtractor implements Serializable{
     final private int nCases = Config.N_CASES;
     final private static int SIZE = Config.WEIGHT_SIZE;
     final public static int N_FEATS = 42;
-    final public static int N_GLOBAL_FEATS = 1;
+    final public static int N_GLOBAL_FEATS = 8;
     
     public FeatureExtractor() {}
     
-    final public int[] extractLabeledFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
+    final public int[] extractLocalFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
         Chunk arg2 = Sample.getNextChunk(sample, arg);
         Word ph = prd.chead;
         Word ah = arg.chead;
@@ -100,18 +100,141 @@ public class FeatureExtractor implements Serializable{
         Chunk arg2 = args[1];
         int caseLabel1 = caseLabels[0];
         int caseLabel2 = caseLabels[1];
+        int direct = getDirect(prd1, prd2);
+        int posit1 = getPosition(arg1.INDEX, arg2.INDEX, prd1.INDEX, prd2.INDEX, sample.NULL_ARG_INDEX);
+        int posit2 = getPosition(arg2.INDEX, arg1.INDEX, prd1.INDEX, prd2.INDEX, sample.NULL_ARG_INDEX);
 
         int[] featIDs = {
-                Template.gen(Template.JOINT_PPAA_REG.hash,
+                Template.gen(Template.PAIR_PP.hash,
                              prd1.regform.hashCode(), prd2.regform.hashCode(),
-                             arg1.regform.hashCode(), arg2.regform.hashCode(),
-                             caseLabel1, caseLabel2),
+                             prd1.voiceSuffix.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+                Template.gen(Template.PAIR_AP1.hash,
+                             arg1.particle.hashCode(), posit1,
+                             prd1.compoundFuncWord.hashCode(), prd1.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+                Template.gen(Template.PAIR_AP2.hash,
+                             arg2.particle.hashCode(), posit2,
+                             prd2.compoundFuncWord.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+
+                Template.gen(Template.TRI_AAP1.hash,
+                             arg1.particle.hashCode(), arg2.particle.hashCode(),
+                             posit1, posit2,
+                             prd1.compoundFuncWord.hashCode(), prd1.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+                Template.gen(Template.TRI_AAP2.hash,
+                             arg1.particle.hashCode(), arg2.particle.hashCode(),
+                             posit1, posit2,
+                             prd2.compoundFuncWord.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+
+                Template.gen(Template.QUAD_AX_VO.hash,
+                             arg1.particle.hashCode(), arg2.particle.hashCode(),
+                             posit1, posit2,
+                             prd1.voiceSuffix.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+                Template.gen(Template.QUAD_AX_AX_VO.hash,
+                             arg1.particle.hashCode(), arg2.particle.hashCode(),
+                             posit1, posit2,
+                             prd1.compoundFuncWord.hashCode(), prd2.compoundFuncWord.hashCode(),
+                             prd1.voiceSuffix.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
+                Template.gen(Template.QUAD_AX_REG_VO.hash,
+                             arg1.particle.hashCode(), arg2.particle.hashCode(),
+                             posit1, posit2,
+                             prd1.regform.hashCode(), prd2.regform.hashCode(),
+                             prd1.voiceSuffix.hashCode(), prd2.voiceSuffix.hashCode(),
+                             caseLabel1, caseLabel2, direct),
         };
         
         return featIDs;
     }
+    
+    private int getDirect(Chunk prd1, Chunk prd2) {
+        if (prd1.INDEX < prd2.INDEX)
+            return 1;
+        else if (prd1.INDEX > prd2.INDEX)
+            return 2;
+        return 0;
+    }
+    
+    private int getPosition(int argIndex1, int argIndex2, int prdIndex1, int prdIndex2, int nullIndex) {
+        if (argIndex1 == nullIndex)
+            return 0;
 
-    final public int[] getOracleFeatIDs(Sample sample) {
+        if (argIndex1 < argIndex2) {
+            if (argIndex1 < prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 111;
+                else if (argIndex1 > prdIndex2)
+                    return 112;
+                return 113;
+            }
+            else if (argIndex1 > prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 121;
+                else if (argIndex1 > prdIndex2)
+                    return 122;
+                return 123;                
+            }
+            else {
+                if (argIndex1 < prdIndex2)
+                    return 131;
+                else if (argIndex1 > prdIndex2)
+                    return 132;
+                return 133;                                
+            }
+        }
+        else if (argIndex1 > argIndex2) {
+            if (argIndex1 < prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 211;
+                else if (argIndex1 > prdIndex2)
+                    return 212;
+                return 213;
+            }
+            else if (argIndex1 > prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 221;
+                else if (argIndex1 > prdIndex2)
+                    return 222;
+                return 223;                
+            }
+            else {
+                if (argIndex1 < prdIndex2)
+                    return 231;
+                else if (argIndex1 > prdIndex2)
+                    return 232;
+                return 233;                                
+            }
+        }
+        else {
+            if (argIndex1 < prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 311;
+                else if (argIndex1 > prdIndex2)
+                    return 312;
+                return 313;
+            }
+            else if (argIndex1 > prdIndex1) {
+                if (argIndex1 < prdIndex2)
+                    return 321;
+                else if (argIndex1 > prdIndex2)
+                    return 322;
+                return 323;                
+            }
+            else {
+                if (argIndex1 < prdIndex2)
+                    return 331;
+                else if (argIndex1 > prdIndex2)
+                    return 332;
+                return 333;                                
+            }
+        }
+    }
+    
+    final public int[] getOracleLocalFeatIDs(Sample sample) {
         int[] featIDs = new int[sample.prds.length * nCases * N_FEATS];
 
         for (int prdIndex=0; prdIndex<sample.prds.length; ++prdIndex) {
@@ -120,12 +243,51 @@ public class FeatureExtractor implements Serializable{
             
             for (int caseLabel=0; caseLabel<argIndices.length; ++caseLabel) {
                 Chunk arg = sample.args[argIndices[caseLabel]];
-                int[] tmpFeatIDs = extractLabeledFeatIDs(sample, prd, arg, prdIndex, caseLabel);
+                int[] tmpFeatIDs = extractLocalFeatIDs(sample, prd, arg, prdIndex, caseLabel);
                 System.arraycopy(tmpFeatIDs, 0, featIDs, (prdIndex*nCases+caseLabel)*N_FEATS, N_FEATS);
             }
         }
 
         return featIDs;
+    }
+    
+    final public int[] getOracleGlobalFeatIDs(Sample sample) {
+        int[][] graph = sample.oracleGraph;
+        int nPrds = graph.length;
+        int[] featIDs = new int[combination(nPrds * nCases) * N_GLOBAL_FEATS];
+        int count = 0;
+
+        for (int prdIndex1=0; prdIndex1<nPrds; ++prdIndex1) {
+            Chunk prd1 = sample.prds[prdIndex1];
+            int[] tmpGraph1 = graph[prdIndex1];
+
+            for (int caseLabel1=0; caseLabel1<nCases; ++caseLabel1) {
+                int argIndex1 = tmpGraph1[caseLabel1];
+                Chunk arg1 = sample.args[argIndex1];
+
+                for (int prdIndex2=prdIndex1; prdIndex2<nPrds; ++prdIndex2) {
+                    Chunk prd2 = sample.prds[prdIndex2];
+                    Chunk[] prds = getReorderPrds(prd1, prd2);
+                    
+                    int[] tmpGraph2 = graph[prdIndex2];
+                    
+                    int initCaseLabel = 0;
+                    if (prdIndex1 == prdIndex2)
+                        initCaseLabel = caseLabel1+1;
+
+                    for (int caseLabel2=initCaseLabel; caseLabel2<nCases; ++caseLabel2) {
+                        int argIndex2 = tmpGraph2[caseLabel2];
+                        Chunk arg2 = sample.args[argIndex2];
+                        Chunk[] args = getReorderArgs(arg1, arg2);
+
+                        int[] tmpFeatIDs = extractGlobalFeatIDs(sample, prds, args, new int[]{caseLabel1, caseLabel2});
+                        System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_GLOBAL_FEATS, N_GLOBAL_FEATS);
+                        count++;
+                    }
+                }
+            }
+        }
+        return featIDs;        
     }
 
     final public int[] getLocalFeatIDs(int[][] graph, ScoreTable scoreTable) {
@@ -151,15 +313,15 @@ public class FeatureExtractor implements Serializable{
 
         for (int prdIndex1=0; prdIndex1<nPrds; ++prdIndex1) {
             int[] tmpGraph1 = graph[prdIndex1];
-            int[][][][][][] scores1 = scoreTable.globalFeatIDs[prdIndex1];
+            int[][][][][][] feats1 = scoreTable.globalFeatIDs[prdIndex1];
 
             for (int caseLabel1=0; caseLabel1<nCases; ++caseLabel1) {
                 int argIndex1 = tmpGraph1[caseLabel1];
-                int[][][][] scores2 = scores1[argIndex1][caseLabel1];
+                int[][][][] feats2 = feats1[argIndex1][caseLabel1];
 
                 for (int prdIndex2=prdIndex1; prdIndex2<nPrds; ++prdIndex2) {
                     int[] tmpGraph2 = graph[prdIndex2];
-                    int[][][] scores3 = scores2[prdIndex2];
+                    int[][][] feats3 = feats2[prdIndex2];
                     
                     int initCaseLabel = 0;
                     if (prdIndex1 == prdIndex2)
@@ -167,7 +329,7 @@ public class FeatureExtractor implements Serializable{
 
                     for (int caseLabel2=initCaseLabel; caseLabel2<nCases; ++caseLabel2) {
                         int argIndex2 = tmpGraph2[caseLabel2];
-                        int[] tmpFeatIDs = scores3[argIndex2][caseLabel2];
+                        int[] tmpFeatIDs = feats3[argIndex2][caseLabel2];
                         System.arraycopy(tmpFeatIDs, 0, featIDs, count*N_GLOBAL_FEATS, N_GLOBAL_FEATS);
                         count++;
                     }
@@ -242,7 +404,16 @@ public class FeatureExtractor implements Serializable{
         DEP_VERBPATH_PRD_ARG("dep:verb:path:prd:arg"),
         DEP_RFORMPATH_PRD_ARG("dep:rform:path:prd:arg"),
 
-        JOINT_PPAA_REG("joint:ppaa:reg"),
+        PAIR_PP("pair:pp"),
+        PAIR_AP1("pair:ap1"),
+        PAIR_AP2("pair:ap2"),
+
+        TRI_AAP1("tri:aap1"),
+        TRI_AAP2("tri:aap2"),
+
+        QUAD_AX_VO("tri:ax:vo"),
+        QUAD_AX_AX_VO("tri:ax:ax:vo"),
+        QUAD_AX_REG_VO("tri:ax:reg:vo"),
         ;
 
         private final String label;
@@ -257,15 +428,6 @@ public class FeatureExtractor implements Serializable{
             int hash = oneAtATimeHashAll(key);
             return Math.abs(hash) % SIZE;
 //            return (hash >>> 1) % SIZE;
-        }
-
-        private static int genUnlabeled(int... key) {
-            return oneAtATimeHashUnlabeled(key);
-        }
-
-        private static int genLabeled(int featID, int caseLabel) {
-            int hash = oneAtATimeHashLabeled(featID, caseLabel);
-            return Math.abs(hash) % SIZE;
         }
     }
 
@@ -300,6 +462,20 @@ public class FeatureExtractor implements Serializable{
         hash ^= (hash >> 11);
         hash += (hash << 15);
         return hash;
+    }
+
+    private Chunk[] getReorderPrds(Chunk prd1, Chunk prd2) {
+        if (prd1.prd.FORM.hashCode() < prd2.prd.FORM.hashCode())
+            return new Chunk[]{prd1, prd2};
+//        return new Chunk[]{prd2, prd1};
+        return new Chunk[]{prd1, prd2};
+    }
+
+    private Chunk[] getReorderArgs(Chunk arg1, Chunk arg2) {
+        if (arg1.chead.FORM.hashCode() < arg2.chead.FORM.hashCode())
+            return new Chunk[]{arg1, arg2};
+//        return new Chunk[]{arg2, arg1};
+        return new Chunk[]{arg1, arg2};
     }
     
 }

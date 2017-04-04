@@ -29,7 +29,7 @@ public class Trainer {
         showStats(trainSamples);
         showStats(testSamples);
 
-        setOracleFeatIDs(trainSamples, parser.featExtractor);
+        parser.setOracleFeatIDs(trainSamples);
 
         for (int i=0; i<ITERATION; i++) {
             System.out.println(String.format("\n\nIteration %d: ", i+1));                
@@ -87,12 +87,7 @@ public class Trainer {
     private Sample[] createSamples(ArrayList<Sentence> corpus) {
         return preprocessor.createSamples(corpus);
     }
-             
-    private void setOracleFeatIDs(Sample[] samples, FeatureExtractor featExtractor) {
-        for (int i=0; i<samples.length; ++i)
-            samples[i].setOracleFeatIDs(featExtractor);
-    }
-    
+                 
     private void showStats(Sample[] samples) {
         preprocessor.showStats(samples);        
     }

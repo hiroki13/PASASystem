@@ -42,4 +42,12 @@ public class BaselineParser extends Parser{
         return graph;
     }
             
+    @Override
+    final public void setOracleFeatIDs(Sample[] samples) {
+        for (int i=0; i<samples.length; ++i) {
+            Sample sample = samples[i];
+            sample.oracleFeatIDs = featExtractor.getOracleLocalFeatIDs(sample);
+        }
+    }
+
 }

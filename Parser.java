@@ -64,12 +64,13 @@ public class Parser {
     }
 
     final public int[] extractLocalFeatIDs(Sample sample, Chunk prd, Chunk arg, int prdIndex, int caseLabel) {
-        return featExtractor.extractLabeledFeatIDs(sample, prd, arg, prdIndex, caseLabel);
+        return featExtractor.extractLocalFeatIDs(sample, prd, arg, prdIndex, caseLabel);
     }
 
     final public float calcScore(int[] featIDs) {
         return perceptron.calcScore(featIDs);
     }
         
+    public void setOracleFeatIDs(Sample[] samples) {}
 
 }

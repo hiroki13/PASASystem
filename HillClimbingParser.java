@@ -1,5 +1,4 @@
 
-import java.util.HashMap;
 import java.util.Random;
 
 /*
@@ -19,15 +18,15 @@ public class HillClimbingParser extends Parser {
     final private Random rnd;
 
     public HillClimbingParser(int restart, int rndSeed) {
-        this.rnd = setRndSeed(rndSeed);
         this.RESTART = restart;
+        this.rnd = setRndSeed(rndSeed);
         this.perceptron = new Perceptron();
         this.featExtractor = new FeatureExtractor();
     }
 
     private Random setRndSeed(int rndSeed) {
-        if (rndSeed == 0)
-            return new Random();        
+//        if (rndSeed == 0)
+//            return new Random();        
         return new Random(rndSeed);
     }
 
@@ -143,13 +142,11 @@ public class HillClimbingParser extends Parser {
         float bestScore = Float.NEGATIVE_INFINITY;
 
         for (int prdIndex=0; prdIndex<graph.length; ++prdIndex) {
-            int[] tmpGraph = graph[prdIndex];
-            
-            for (int caseLabel=0; caseLabel<tmpGraph.length; ++caseLabel) {
-
+            for (int caseLabel=0; caseLabel<N_CASES; ++caseLabel) {
                 for (int argIndex=0; argIndex<nArgs; ++argIndex) {
                     int[][] neighborGraph = copyGraph(graph);
                     neighborGraph[prdIndex][caseLabel] = argIndex;
+
                     float localScore = getLocalScore(neighborGraph, scoreTable);
                     float globalScore = getGlobalScore(neighborGraph, scoreTable);
                     float score = localScore + globalScore;
@@ -239,13 +236,15 @@ public class HillClimbingParser extends Parser {
     private Chunk[] getReorderPrds(Chunk prd1, Chunk prd2) {
         if (prd1.prd.FORM.hashCode() < prd2.prd.FORM.hashCode())
             return new Chunk[]{prd1, prd2};
-        return new Chunk[]{prd2, prd1};
+//        return new Chunk[]{prd2, prd1};
+        return new Chunk[]{prd1, prd2};
     }
 
     private Chunk[] getReorderArgs(Chunk arg1, Chunk arg2) {
         if (arg1.chead.FORM.hashCode() < arg2.chead.FORM.hashCode())
             return new Chunk[]{arg1, arg2};
-        return new Chunk[]{arg2, arg1};
+//        return new Chunk[]{arg2, arg1};
+        return new Chunk[]{arg1, arg2};
     }
     
     private float getScore(int[] featIDs) {
@@ -266,4 +265,13 @@ public class HillClimbingParser extends Parser {
         return graph;
     }
     
+    @Override
+    final public void setOracleFeatIDs(Sample[] samples) {
+        for (int i=0; i<samples.length; ++i) {
+            Sample sample = samples[i];
+            int[] localFeatIDs = featExtractor.getOracleLocalFeatIDs(sample);
+            int[] globalFeatIDs = featExtractor.getOracleGlobalFeatIDs(sample);
+            sample.oracleFeatIDs = concatArrays(localFeatIDs, globalFeatIDs);
+        }
+    }
 }
